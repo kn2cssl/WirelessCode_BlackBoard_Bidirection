@@ -112,10 +112,6 @@ int main (void)
 			Buf_Tx_R[i][13] = (int)(ki*100);
 			Buf_Tx_R[i][14] = (int)(kd*100);
 		}
-
-
-		
-		//_delay_ms(20);
 		_delay_us(1);
 	}
 }
@@ -212,7 +208,7 @@ ISR(PRX_R)
 	{
 		//count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[0][motor_show*2-2]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][motor_show*2-1]) & 0x0ff),((int)(Buf_Rx_R[0][9]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][8]) & 0x0ff));
 		
-		count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[0][9]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][8]) & 0x0ff),((int)(Buf_Rx_R[0][11]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][10]) & 0x0ff)),((int)(Buf_Rx_R[0][13]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][12]) & 0x0ff),((int)(Buf_Rx_R[0][15]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][14]) & 0x0ff));
+		count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[0][9]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][8]) & 0x0ff),((int)(Buf_Rx_R[0][11]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][10]) & 0x0ff),((int)(Buf_Rx_R[0][13]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][12]) & 0x0ff),((int)(Buf_Rx_R[0][15]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][14]) & 0x0ff));
 		for (uint8_t i=0;i<count;i++)
 		usart_putchar(&USARTE0,str[i]);
 		
