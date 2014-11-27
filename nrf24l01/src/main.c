@@ -207,18 +207,14 @@ ISR(PRX_R)
 	}
 	else
 	{		
-		count = sprintf(str,"Rid:%d,Mid:%d,%d,%d,%d,%d,",test_robot,Menu_Num,
+		count = sprintf(str,"%d,%d,%d,%d\r",
 		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
 		for (uint8_t i=0;i<count;i++)
 		usart_putchar(&USARTE0,str[i]);
-		
-		count = sprintf(str,"%d,%d,%d\r",(int)(kp*100),(int)(ki*100),(int)(kd*100));
 
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
 	}
 	
 	
@@ -271,18 +267,13 @@ ISR(PRX_L)
 	}
 	else
 	{
-		count = sprintf(str,"%d,%d,%d,%d\r",/*,test_robot,Menu_Num,*/
+		count = sprintf(str,"%d,%d,%d,%d\r",
 		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
 		for (uint8_t i=0;i<count;i++)
 		usart_putchar(&USARTE0,str[i]);
-		
-		//count = sprintf(str,"%d,%d,%d\r",(int)(kp*100),(int)(ki*100),(int)(kd*100));
-//
-		//for (uint8_t i=0;i<count;i++)
-		//usart_putchar(&USARTE0,str[i]);
 	}
 }
 
