@@ -21,9 +21,10 @@ char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 char str[200];
 uint8_t count;
 uint8_t flg;
-float P_temp,I_temp,D_temp,P,I,D,a=0,ki=0,kp=0.15,kd=0.05,M1,M1_temp;//ki=1.34,kp=1,kd=0.02,;
+float P_temp,I_temp,D_temp,P,I,D,a=0,ki=0,kp=0.15,kd=0.06,M1,M1_temp;//ki=1.34,kp=1,kd=0.02,;
 int16_t M3RPM;
-int motor_show;
+int test_motor;
+int test_robot;
 
 uint16_t pck_timeout[Max_Robot];
 
@@ -205,10 +206,12 @@ ISR(PRX_R)
 		usart_putchar(&USARTE0,str[i]);
 	}
 	else
-	{
-		//count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[0][motor_show*2-2]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][motor_show*2-1]) & 0x0ff),((int)(Buf_Rx_R[0][9]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][8]) & 0x0ff));
-		
-		count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[0][9]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][8]) & 0x0ff),((int)(Buf_Rx_R[0][11]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][10]) & 0x0ff),((int)(Buf_Rx_R[0][13]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][12]) & 0x0ff),((int)(Buf_Rx_R[0][15]<<8) & 0xff00) | ((int)(Buf_Rx_R[0][14]) & 0x0ff));
+	{		
+		count = sprintf(str,"Rid:%d,Mid:%d,%d,%d,%d,%d,",test_robot,Menu_Num,
+		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
 		for (uint8_t i=0;i<count;i++)
 		usart_putchar(&USARTE0,str[i]);
 		
@@ -257,29 +260,30 @@ ISR(PRX_L)
 	}
 	
 	
-	
-	
-	//if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-	//{
-	//count = sprintf(str,"%d,%d\r",
-	//((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
-	//((Buf_Rx_R[0][11+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][10+(Menu_Num*2)]&0x00ff));
-	//
-	//for (uint8_t i=0;i<count;i++)
-	//usart_putchar(&USARTE0,str[i]);
-	//}
-	//else
-	//{
-	//count = sprintf(str,"%d,%d,",((int)(Buf_Rx_R[3][7]<<8) & 0xff00) | ((int)(Buf_Rx_R[3][6]) & 0x0ff),((int)(Buf_Rx_R[3][15]<<8) & 0xff00) | ((int)(Buf_Rx_R[3][14]) & 0x0ff));
-	//
-	//for (uint8_t i=0;i<count;i++)
-	//usart_putchar(&USARTE0,str[i]);
-	//
-	//count = sprintf(str,"%d,%d,%d\r",(int)(kp*100),(int)(ki*100),(int)(kd*100));
-	//
-	//for (uint8_t i=0;i<count;i++)
-	//usart_putchar(&USARTE0,str[i]);
-	//}
+	if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+	{
+		count = sprintf(str,"%d,%d\r",
+		((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
+		((Buf_Rx_R[0][9+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][8+(Menu_Num*2)]&0x00ff));
+		
+		for (uint8_t i=0;i<count;i++)
+		usart_putchar(&USARTE0,str[i]);
+	}
+	else
+	{
+		count = sprintf(str,"%d,%d,%d,%d\r",/*,test_robot,Menu_Num,*/
+		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
+		for (uint8_t i=0;i<count;i++)
+		usart_putchar(&USARTE0,str[i]);
+		
+		//count = sprintf(str,"%d,%d,%d\r",(int)(kp*100),(int)(ki*100),(int)(kd*100));
+//
+		//for (uint8_t i=0;i<count;i++)
+		//usart_putchar(&USARTE0,str[i]);
+	}
 }
 
 ISR(USART_R_RXC_vect)
@@ -298,7 +302,7 @@ ISR(USART_L_RXC_vect)
 	data=USARTE0_DATA;
 
 
-	switch (data)
+	switch (data)// used character : {p,o,i,l,k,j,w,s,123456(for robot id),}
 	{
 		case 'p':
 		kp=kp+0.01;
@@ -346,30 +350,16 @@ ISR(USART_L_RXC_vect)
 		usart_putchar(&USARTE0,str[i]);
 		break;
 		
-		case 's':
-		M3RPM-=10;
-		Buf_Tx_R[0][7] = (M3RPM>>8) & 0x0ff ;
-		Buf_Tx_R[0][8] = M3RPM & 0x0ff ;
-		count = sprintf(str,"M3RPM: %d\r",M3RPM);
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		
+		case '0':
 		case '1':
-		motor_show = 1 ;
-		break;
-		
 		case '2':
-		motor_show = 2 ;
-		break;
-		
 		case '3':
-		motor_show = 3 ;
-		break;
-		
 		case '4':
-		motor_show = 4 ;
-		break;
+		case '5':
+		case '6':
+		test_robot = data - '0';
+		break;		
+		
 	};
 
 }
