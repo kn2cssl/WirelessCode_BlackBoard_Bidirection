@@ -42,22 +42,23 @@ int main (void)
 	USART_L_init();
 	NRF24L01_L_CE_LOW;       //disable transceiver modes
 	NRF24L01_R_CE_LOW;
-	///////////////////////////////////////////////////////////////////////////////////////////spi se
-
-	spi_xmega_set_baud_div(&NRF24L01_L_SPI,8000000UL,F_CPU);
-	spi_enable_master_mode(&NRF24L01_L_SPI);
-	spi_enable(&NRF24L01_L_SPI);
-
-	spi_xmega_set_baud_div(&NRF24L01_R_SPI,8000000UL,F_CPU);
-	spi_enable_master_mode(&NRF24L01_R_SPI);
-	spi_enable(&NRF24L01_R_SPI);
-	
-	sei();
-	
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////spi setting
+																			
+	spi_xmega_set_baud_div(&NRF24L01_L_SPI,8000000UL,F_CPU);				
+	spi_enable_master_mode(&NRF24L01_L_SPI);								
+	spi_enable(&NRF24L01_L_SPI);											
+																			
+	spi_xmega_set_baud_div(&NRF24L01_R_SPI,8000000UL,F_CPU);				
+	spi_enable_master_mode(&NRF24L01_R_SPI);								
+	spi_enable(&NRF24L01_R_SPI);											
+																			
+	sei();																	
+																			
+	////////////////////////////////////////////////////////////////////////
 
 	_delay_us(10);
-	_delay_ms(100);      //power on reset delay needs 100ms
+	//power on reset delay needs 100ms
+	_delay_ms(100);															
 	NRF24L01_L_Clear_Interrupts();
 	NRF24L01_R_Clear_Interrupts();
 	NRF24L01_L_Flush_TX();
@@ -88,16 +89,6 @@ int main (void)
 	
 	while (1)
 	{
-		//LCDGotoXY(0,0);
-		//LCDStringRam("salad");
-		
-		//usart_putchar(&Wireless_R_USART,START_BYTE0);
-		//usart_putchar(&Wireless_R_USART,START_BYTE1);
-		//for (uint8_t i=0;i<Max_Robot;i++)
-		//for (uint8_t j = 0; j<Max_SendPacket_Lenght; j++)
-		//usart_putchar(&Wireless_R_USART,Buf_Rx_R[i][j]);
-		//for (uint8_t i=0;i<_Buffer_Size;i++)
-		//usart_putchar(&USARTE0,Buf_Rx_R[0][i]);
 		if (wireless_reset>=30)
 		{
 			while(1)
@@ -106,13 +97,6 @@ int main (void)
 			}
 		}
 		
-		for(uint8_t i=0;i<12;i++)
-		{
-			Buf_Tx_R[i][11] = Menu_Num;
-			Buf_Tx_R[i][12] = (int)(kp*100);
-			Buf_Tx_R[i][13] = (int)(ki*100);
-			Buf_Tx_R[i][14] = (int)(kd*100);
-		}
 		_delay_us(1);
 	}
 }
@@ -122,12 +106,15 @@ ISR(TCD0_OVF_vect)
 {   wireless_reset++;
 	for (uint8_t i=0;i<Max_Robot;i++)
 	{
+		//if there is no order from pc for a robot
+		//an order of brake and then free wheel will
+		//be send to that robot
 		pck_timeout[i]++;
 		if (pck_timeout[i]>=300)
 		{
 			if(pck_timeout[i]<=600)
 			
-			{
+			{//brake order
 				Buf_Tx_R[i][0] = i;
 				Buf_Tx_R[i][1] = 0;
 				Buf_Tx_R[i][2] = 1;
@@ -141,7 +128,7 @@ ISR(TCD0_OVF_vect)
 				Buf_Tx_R[i][10] = 0;
 			}
 			else
-			{
+			{//freewheel order
 				Buf_Tx_R[i][0] = i;
 				Buf_Tx_R[i][1] = 1;
 				Buf_Tx_R[i][2] = 2;
@@ -195,18 +182,8 @@ ISR(PRX_R)
 		NRF24L01_R_Flush_TX();
 	}
 	
-
-	if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+	if (tmprid == test_robot)
 	{
-		count = sprintf(str,"%d,%d\r",
-		((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
-		((Buf_Rx_R[0][9+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][8+(Menu_Num*2)]&0x00ff));
-		
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-	}
-	else
-	{		
 		count = sprintf(str,"%d,%d,%d,%d\r",
 		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
 		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
@@ -214,12 +191,8 @@ ISR(PRX_R)
 		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
 		for (uint8_t i=0;i<count;i++)
 		usart_putchar(&USARTE0,str[i]);
-
 	}
 	
-	
-
-
 }
 
 ISR(PRX_L)
@@ -255,17 +228,7 @@ ISR(PRX_L)
 		NRF24L01_L_Flush_TX();
 	}
 	
-	
-	if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-	{
-		count = sprintf(str,"%d,%d\r",
-		((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
-		((Buf_Rx_R[0][9+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][8+(Menu_Num*2)]&0x00ff));
-		
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-	}
-	else
+	if (tmprid + 3 == test_robot)
 	{
 		count = sprintf(str,"%d,%d,%d,%d\r",
 		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
@@ -293,7 +256,7 @@ ISR(USART_L_RXC_vect)
 	data=USARTE0_DATA;
 
 
-	switch (data)// used character : {p,o,i,l,k,j,w,s,123456(for robot id),}
+	switch (data)// used character : {p,o,i,l,k,j,w,s,123456(for robot id),!@#$(for motors id)}
 	{
 		case 'p':
 		kp=kp+0.01;
@@ -349,7 +312,23 @@ ISR(USART_L_RXC_vect)
 		case '5':
 		case '6':
 		test_robot = data - '0';
-		break;		
+		break;
+		
+		case '!':
+		Buf_Tx_R[test_robot][11] = 0;
+		break;
+		
+		case '@':
+		Buf_Tx_R[test_robot][11] = 1;
+		break;
+		
+		case '#':
+		Buf_Tx_R[test_robot][11] = 2;
+		break;
+		
+		case '$':
+		Buf_Tx_R[test_robot][11] = 3;
+		break;	
 		
 	};
 
