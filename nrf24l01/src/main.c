@@ -13,15 +13,12 @@
 
 char Buf_Tx_R[Max_Robot][_Buffer_Size] ;
 char Buf_Rx_R[Max_Robot][_Buffer_Size];
-//char Buf_Tx_Comp[122] = {0xa5,0x5a}; //2+10*12
 int tmprid,robotspeed;
 int wireless_reset;
 
 char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 char str[200];
 uint8_t count;
-uint8_t flg;
-float P_temp,I_temp,D_temp,P,I,D,a=0,ki=0,kp=0.15,kd=0.06,M1,M1_temp;//ki=1.34,kp=1,kd=0.02,;
 int16_t M3RPM;
 int test_motor;
 int test_robot;
@@ -256,44 +253,8 @@ ISR(USART_L_RXC_vect)
 	data=USARTE0_DATA;
 
 
-	switch (data)// used character : {p,o,i,l,k,j,w,s,123456(for robot id),!@#$(for motors id)}
+	switch (data)// used character : {w,s,123456(for robot id),!@#$(for motors id)}
 	{
-		case 'p':
-		kp=kp+0.01;
-		count = sprintf(str,"kp: %d\r",(int)(kp*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		case 'o':
-		ki=ki+0.05;
-		count = sprintf(str,"ki: %d\r",(int)(ki*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		case 'i':
-		kd=kd+0.01;
-		count = sprintf(str,"kd: %d\r",(int)(kd*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		case 'l':
-		kp=kp-0.01;
-		count = sprintf(str,"kp: %d\r",(int)(kp*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		case 'k':
-		ki=ki-0.05;
-		count = sprintf(str,"ki: %d\r",(int)(ki*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
-		case 'j':
-		kd=kd-0.01;
-		count = sprintf(str,"kd: %d\r",(int)(kd*100));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-		break;
 		
 		case 'w':
 		M3RPM+=10;
