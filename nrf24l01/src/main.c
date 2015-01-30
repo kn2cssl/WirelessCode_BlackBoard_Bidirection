@@ -16,7 +16,7 @@ char Buf_Rx_R[Max_Robot][_Buffer_Size];
 //char Buf_Tx_Comp[122] = {0xa5,0x5a}; //2+10*12
 int tmprid,robotspeed;
 int wireless_reset;
-
+int time=0;
 char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 char str[200];
 uint8_t count;
@@ -25,6 +25,7 @@ float P_temp,I_temp,D_temp,P,I,D,a=0,ki=0,kp=0.15,kd=0.06,M1,M1_temp;//ki=1.34,k
 int16_t M3RPM;
 int test_motor;
 int test_robot;
+int vv = 0;
 
 uint16_t pck_timeout[Max_Robot];
 
@@ -88,31 +89,6 @@ int main (void)
 	
 	while (1)
 	{
-		//LCDGotoXY(0,0);
-		//LCDStringRam("salad");
-		
-		//usart_putchar(&Wireless_R_USART,START_BYTE0);
-		//usart_putchar(&Wireless_R_USART,START_BYTE1);
-		//for (uint8_t i=0;i<Max_Robot;i++)
-		//for (uint8_t j = 0; j<Max_SendPacket_Lenght; j++)
-		//usart_putchar(&Wireless_R_USART,Buf_Rx_R[i][j]);
-		//for (uint8_t i=0;i<_Buffer_Size;i++)
-		//usart_putchar(&USARTE0,Buf_Rx_R[0][i]);
-		if (wireless_reset>=30)
-		{
-			while(1)
-			{
-				
-			}
-		}
-		
-		for(uint8_t i=0;i<12;i++)
-		{
-			Buf_Tx_R[i][11] = Menu_Num;
-			Buf_Tx_R[i][12] = (int)(kp*100);
-			Buf_Tx_R[i][13] = (int)(ki*100);
-			Buf_Tx_R[i][14] = (int)(kd*100);
-		}
 		_delay_us(1);
 	}
 }
@@ -120,6 +96,19 @@ int main (void)
 
 ISR(TCD0_OVF_vect)
 {   wireless_reset++;
+	
+	time++;
+	if (time>3)
+	{
+		time = 0;
+		uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
+		if((status_R&0x01) == 1)
+		{
+		NRF24L01_R_Flush_TX();
+		}
+
+	}
+	
 	for (uint8_t i=0;i<Max_Robot;i++)
 	{
 		pck_timeout[i]++;
@@ -182,30 +171,34 @@ ISR(PRX_R)
 			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 			//4) if there are more data in RX FIFO, repeat from step 1).
 		} while((NRF24L01_R_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
-	}
-	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
-	if((status_R&_TX_DS) == _TX_DS)
-	{
-		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
-		wireless_reset=0;
-	}
-	if ((status_R&_MAX_RT) == _MAX_RT)
-	{
-		//LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
-		NRF24L01_R_Flush_TX();
-	}
+}
+status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
+if((status_R&_TX_DS) == _TX_DS)
+{
+	LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
+	wireless_reset=0;
+	
+}
+
+// if ((status_R&_MAX_RT) == _MAX_RT)
+// 	{
+// 		//LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
+// 		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
+// 		NRF24L01_R_Flush_TX();
+// 	}
 	
 
-	if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-	{
-		count = sprintf(str,"%d,%d\r",
-		((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
-		((Buf_Rx_R[0][9+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][8+(Menu_Num*2)]&0x00ff));
-		
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
-	}
-	else
+// 	if(Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+// 	{
+// 		count = sprintf(str,"%d,%d\r",
+// 		((Buf_Rx_R[0][1+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][0+(Menu_Num*2)]&0x00ff),
+// 		((Buf_Rx_R[0][9+(Menu_Num*2)]<<8)&0x0ff00)|(Buf_Rx_R[0][8+(Menu_Num*2)]&0x00ff));
+// 		
+// 		for (uint8_t i=0;i<count;i++)
+// 		usart_putchar(&USARTE0,str[i]);
+// 	}
+// 	else
+	if(tmprid == test_robot)
 	{		
 		count = sprintf(str,"%d,%d,%d,%d\r",
 		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
@@ -267,13 +260,15 @@ ISR(PRX_L)
 	}
 	else
 	{
-		count = sprintf(str,"%d,%d,%d,%d\r",
-		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
+			count = sprintf(str,"%d,%d,%d,%d\r",
+			((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
+
+		
 	}
 }
 
