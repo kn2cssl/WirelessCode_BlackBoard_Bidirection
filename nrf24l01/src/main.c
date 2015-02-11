@@ -22,6 +22,7 @@ uint8_t count;
 int16_t M3RPM;
 int test_motor;
 int test_robot;
+int time;
 
 uint16_t pck_timeout[Max_Robot];
 
@@ -86,21 +87,15 @@ int main (void)
 	
 	while (1)
 	{
-		if (wireless_reset>=30)
-		{
-			while(1)
-			{
-				
-			}
-		}
+
 		
-		_delay_us(1);
 	}
 }
 
 
 ISR(TCD0_OVF_vect)
 {   wireless_reset++;
+	time++;
 	for (uint8_t i=0;i<Max_Robot;i++)
 	{
 		//if there is no order from pc for a robot
@@ -131,7 +126,7 @@ ISR(TCD0_OVF_vect)
 				Buf_Tx_R[i][2] = 2;
 				Buf_Tx_R[i][3] = 3;
 				Buf_Tx_R[i][4] = 4;
-				Buf_Tx_R[i][5] = 0;
+				Buf_Tx_R[i][5] = time;
 				Buf_Tx_R[i][6] = 0;
 				Buf_Tx_R[i][7] = 0;
 				Buf_Tx_R[i][8] = 0;
@@ -155,10 +150,12 @@ ISR(PRX_R)
 		wireless_reset=0;
 		do
 		{
-			//wdt_reset();
-			//strcat(Buf_Tx_R[0] ,"123456789abcdefghijklmnopqrstuvw");
 			tmprid = ((status_R&0x0e)>>1);
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[tmprid], _Buffer_Size);
+			NRF24L01_R_Flush_TX();
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[0], _Buffer_Size);
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[2], _Buffer_Size);
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[1], _Buffer_Size);
+			//NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[tmprid], _Buffer_Size);
 			//1) read payload through SPI,
 			NRF24L01_R_Read_RX_Buf(Buf_Rx_R[tmprid], _Buffer_Size);
 			//2) clear RX_DR IRQ,
@@ -201,8 +198,6 @@ ISR(PRX_L)
 		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
 		do
 		{
-			//wdt_reset();
-			//Buf_Tx_R[0] = "123456789abcdefghijklmnopqrstuvw";
 			tmprid = ((status_L&0x0e)>>1);
 			NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + tmprid,Buf_Tx_R[tmprid+3], _Buffer_Size);
 			//1) read payload through SPI,
