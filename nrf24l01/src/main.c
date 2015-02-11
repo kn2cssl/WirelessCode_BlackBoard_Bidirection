@@ -19,6 +19,7 @@ int wireless_reset;
 char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 char str[200];
 uint8_t count;
+int display_counter = 0;
 int16_t M3RPM;
 int test_motor;
 int test_robot;
@@ -178,13 +179,19 @@ ISR(PRX_R)
 	
 	if (tmprid == test_robot)
 	{
-		count = sprintf(str,"%d,%d,%d,%d\r",
-		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
+		display_counter ++ ;
+		if (display_counter ==10)
+		{
+			count = sprintf(str,"%d,%d,%d,%d\r",
+			((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
+			display_counter=0;
+		}
+		
 	}
 	
 }
