@@ -88,7 +88,13 @@ int main (void)
 	
 	while (1)
 	{
-
+				count = sprintf(str,"%d,%d,%d,%d,%d\r",test_robot,
+				((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+				((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+				((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+				((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
+				for (uint8_t i=0;i<count;i++)
+				usart_putchar(&USARTE0,str[i]);
 		
 	}
 }
@@ -127,8 +133,8 @@ ISR(TCD0_OVF_vect)
 				Buf_Tx_R[i][2] = 2;
 				Buf_Tx_R[i][3] = 3;
 				Buf_Tx_R[i][4] = 4;
-				Buf_Tx_R[i][5] = time;
-				Buf_Tx_R[i][6] = 0;
+				Buf_Tx_R[i][5] = 0;
+				Buf_Tx_R[i][6] = time;
 				Buf_Tx_R[i][7] = 0;
 				Buf_Tx_R[i][8] = 0;
 				Buf_Tx_R[i][9] = 0;
@@ -153,9 +159,9 @@ ISR(PRX_R)
 		{
 			tmprid = ((status_R&0x0e)>>1);
 			NRF24L01_R_Flush_TX();
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[0], _Buffer_Size);
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[2], _Buffer_Size);
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[1], _Buffer_Size);
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[0], _Buffer_Size);
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[1], _Buffer_Size);
+			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[2], _Buffer_Size);
 			//NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[tmprid], _Buffer_Size);
 			//1) read payload through SPI,
 			NRF24L01_R_Read_RX_Buf(Buf_Rx_R[tmprid], _Buffer_Size);
@@ -177,23 +183,6 @@ ISR(PRX_R)
 		NRF24L01_R_Flush_TX();
 	}
 	
-	if (tmprid == test_robot)
-	{
-		display_counter ++ ;
-		if (display_counter ==10)
-		{
-			count = sprintf(str,"%d,%d,%d,%d\r",
-			((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
-			for (uint8_t i=0;i<count;i++)
-			usart_putchar(&USARTE0,str[i]);
-			display_counter=0;
-		}
-		
-	}
-	
 }
 
 ISR(PRX_L)
@@ -206,7 +195,11 @@ ISR(PRX_L)
 		do
 		{
 			tmprid = ((status_L&0x0e)>>1);
-			NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + tmprid,Buf_Tx_R[tmprid+3], _Buffer_Size);
+						NRF24L01_L_Flush_TX();
+						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[5], _Buffer_Size);
+						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[3], _Buffer_Size);
+						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[4], _Buffer_Size);
+						
 			//1) read payload through SPI,
 			NRF24L01_L_Read_RX_Buf(Buf_Rx_R[tmprid+3], _Buffer_Size);
 			//2) clear RX_DR IRQ,
@@ -225,17 +218,6 @@ ISR(PRX_L)
 	{
 		//LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
 		NRF24L01_L_Flush_TX();
-	}
-	
-	if (tmprid + 3 == test_robot)
-	{
-		count = sprintf(str,"%d,%d,%d,%d\r",
-		((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-		((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
-		for (uint8_t i=0;i<count;i++)
-		usart_putchar(&USARTE0,str[i]);
 	}
 }
 
