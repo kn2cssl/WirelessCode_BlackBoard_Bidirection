@@ -305,6 +305,17 @@ void NRF24L01_R_Flush_RX(void) {
 }
 
 /**
+ Used in TX mode. Disables AUTOACK on this
+ specific packet.
+*/
+void NRF24L01_R_NOACK_TX(void)
+ {
+	NRF24L01_R_CS_LOW;
+	SPI_R(W_TX_PAYLOAD_NOACK);
+	NRF24L01_R_CS_HIGH;
+}
+
+/**
  Initializes the device
  @param Device_Mode = _TX_MODE, _RX_MODE
  @param CH = 0..125

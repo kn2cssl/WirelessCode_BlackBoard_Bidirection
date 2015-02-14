@@ -150,7 +150,7 @@ ISR(PRX_R)
 {		
 	wdt_reset();
 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
-
+	LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
 	if((status_R & _RX_DR) == _RX_DR)
 	{
 		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
