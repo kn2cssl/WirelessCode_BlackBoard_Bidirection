@@ -13,6 +13,7 @@
 
 char Buf_Tx_R[Max_Robot][_Buffer_Size] ;
 char Buf_Rx_R[Max_Robot][_Buffer_Size];
+char Buff_L[_Buffer_Size];
 int tmprid,robotspeed;
 int wireless_reset;
 
@@ -115,7 +116,25 @@ ISR(TCD0_OVF_vect)
 	wireless_reset++;
 	time++;
 	
-	NRF24L01_L_Write_TX_Buf(Buf_Tx_R[5], _Buffer_Size);
+	
+	Buff_L[0]='L';
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_L[i] = Buf_Tx_R[0][i] ;
+	}
+
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_L[i+10] = Buf_Tx_R[1][i] ;
+	}
+	
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_L[i+20] = Buf_Tx_R[2][i] ;
+	}
+	
+	
+	NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
 	NRF24L01_L_RF_TX();
 	
 
