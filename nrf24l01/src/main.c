@@ -24,6 +24,8 @@ int16_t M3RPM;
 int test_motor;
 int test_robot;
 int time;
+int timer=0;
+int data_flag = 0;
 
 uint16_t pck_timeout[Max_Robot];
 
@@ -66,8 +68,8 @@ int main (void)
 	NRF24L01_R_Flush_RX();
 
 	NRF24L01_L_CE_LOW;
-	NRF24L01_L_Init_milad(_RX_MODE, _CH_L, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
-	NRF24L01_L_WriteReg(W_REGISTER | DYNPD,0x07);//0x07
+	NRF24L01_L_Init_milad(_TX_MODE, _CH_L, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
+	NRF24L01_L_WriteReg(W_REGISTER | DYNPD,0x01);//0x07
 	NRF24L01_L_WriteReg(W_REGISTER | FEATURE,0x06);//0x06
 	NRF24L01_L_CE_HIGH;
 
@@ -88,21 +90,35 @@ int main (void)
 	
 	while (1)
 	{
-				count = sprintf(str,"%d,%d,%d,%d,%d\r",test_robot,
-				((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-				((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-				((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-				((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff));
-				for (uint8_t i=0;i<count;i++)
-				usart_putchar(&USARTE0,str[i]);
+		data_flag++;
+		if (data_flag ==15)
+		{
+			count = sprintf(str,"%d,%d,%d,%d,%d\r",
+			((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
+			((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff),
+			 time);
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
+			data_flag = 0 ;
+		}
+		
 		
 	}
 }
 
 
 ISR(TCD0_OVF_vect)
-{   wireless_reset++;
+{   
+	wdt_reset();
+	wireless_reset++;
 	time++;
+	
+	NRF24L01_L_Write_TX_Buf(Buf_Tx_R[5], _Buffer_Size);
+	NRF24L01_L_RF_TX();
+	
+
 	for (uint8_t i=0;i<Max_Robot;i++)
 	{
 		//if there is no order from pc for a robot
@@ -148,40 +164,40 @@ ISR(TCD0_OVF_vect)
 
 ISR(PRX_R)
 {		
-	wdt_reset();
-	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
-	LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
-	if((status_R & _RX_DR) == _RX_DR)
-	{
-		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
-		wireless_reset=0;
-		do
-		{
-			tmprid = ((status_R&0x0e)>>1);
-			NRF24L01_R_Flush_TX();
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[0], _Buffer_Size);
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[1], _Buffer_Size);
-			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[2], _Buffer_Size);
-			//NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_Tx_R[tmprid], _Buffer_Size);
-			//1) read payload through SPI,
-			NRF24L01_R_Read_RX_Buf(Buf_Rx_R[tmprid], _Buffer_Size);
-			//2) clear RX_DR IRQ,
-			status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
-			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
-			//4) if there are more data in RX FIFO, repeat from step 1).
-		} while((NRF24L01_R_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
-	}
-	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
-	if((status_R&_TX_DS) == _TX_DS)
-	{
-		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
-		wireless_reset=0;
-	}
-	if ((status_R&_MAX_RT) == _MAX_RT)
-	{
-		//LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
-		NRF24L01_R_Flush_TX();
-	}
+// 	wdt_reset();
+// 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
+// 
+// 	if((status_R & _RX_DR) == _RX_DR)
+// 	{
+// 		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
+// 		wireless_reset=0;
+// 		do
+// 		{
+// 			tmprid = ((status_R&0x0e)>>1);
+// 			NRF24L01_R_Flush_TX();
+// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[0] , _Buffer_Size );
+// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[1] , _Buffer_Size );
+// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[2] , _Buffer_Size );
+// 			//NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_ Tx_R[tmprid], _Buffer_Size);
+// 			//1) read payload through SPI,
+// 			NRF24L01_R_Read_RX_Buf(Buf_Rx_R[tmprid], _Buffer_Size);
+// 			//2) clear RX_DR IRQ,
+// 			status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
+// 			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
+// 			//4) if there are more data in RX FIFO, repeat from step 1).
+// 		} while((NRF24L01_R_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
+// 	}
+// 	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
+// 	if((status_R&_TX_DS) == _TX_DS)
+// 	{
+// 		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
+// 		wireless_reset=0;
+// 	}
+// 	if ((status_R&_MAX_RT) == _MAX_RT)
+// 	{
+// 		//LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
+// 		NRF24L01_R_Flush_TX();
+// 	}
 	
 }
 
@@ -189,26 +205,26 @@ ISR(PRX_L)
 {
 	wdt_reset();
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
-	if((status_L & _RX_DR) == _RX_DR)
-	{
-		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
-		do
-		{
-			tmprid = ((status_L&0x0e)>>1);
-						NRF24L01_L_Flush_TX();
-						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[5], _Buffer_Size);
-						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[3], _Buffer_Size);
-						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[4], _Buffer_Size);
-						
-			//1) read payload through SPI,
-			NRF24L01_L_Read_RX_Buf(Buf_Rx_R[tmprid+3], _Buffer_Size);
-			//2) clear RX_DR IRQ,
-			robotspeed= Buf_Rx_R[1][9]| Buf_Rx_R[1][8]<<8 ;
-			status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
-			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
-			//4) if there are more data in RX FIFO, repeat from step 1).
-		} while((NRF24L01_L_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
-	}
+// 	if((status_L & _RX_DR) == _RX_DR)
+// 	{
+// 		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
+// 		do
+// 		{
+// 			tmprid = ((status_L&0x0e)>>1);
+// 						NRF24L01_L_Flush_TX();
+// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[5], _Buffer_Size);
+// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[3], _Buffer_Size);
+// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[4], _Buffer_Size);
+// 						
+// 			//1) read payload through SPI,
+// 			NRF24L01_L_Read_RX_Buf(Buf_Rx_R[tmprid+3], _Buffer_Size);
+// 			//2) clear RX_DR IRQ,
+// 			robotspeed= Buf_Rx_R[1][9]| Buf_Rx_R[1][8]<<8 ;
+// 			status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
+// 			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
+// 			//4) if there are more data in RX FIFO, repeat from step 1).
+// 		} while((NRF24L01_L_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
+// 	}
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_L&_TX_DS) == _TX_DS)
 	{
