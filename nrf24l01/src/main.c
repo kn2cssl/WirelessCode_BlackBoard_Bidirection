@@ -11,10 +11,11 @@
 #include "lcd.h"
 #include "transmitter.h"
 
+
 char Buf_Tx_R[Max_Robot][_Buffer_Size] ;
 char Buf_Rx_R[Max_Robot][_Buffer_Size];
 char Buff_L[_Buffer_Size];
-int tmprid,robotspeed;
+int tmprid;
 int wireless_reset;
 
 char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
@@ -23,7 +24,7 @@ uint8_t count;
 int display_counter = 0;
 int16_t M3RPM;
 int test_motor;
-int test_robot;
+int Robot_Select;
 int time;
 int timer=0;
 int data_flag = 0;
@@ -95,10 +96,10 @@ int main (void)
 		if (data_flag ==15)
 		{
 			count = sprintf(str,"%d,%d,%d,%d,%d\r",
-			((int)(Buf_Rx_R[test_robot][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][1]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][3]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][5]) & 0x0ff),
-			((int)(Buf_Rx_R[test_robot][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[test_robot][7]) & 0x0ff),
+			((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
+			((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
+			((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
+			((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
 			 time);
 			for (uint8_t i=0;i<count;i++)
 			usart_putchar(&USARTE0,str[i]);
@@ -116,7 +117,7 @@ ISR(TCD0_OVF_vect)
 	wireless_reset++;
 	time++;
 	
-	
+	/////////////////////////////////packeting three robot data in one packet
 	Buff_L[0]='L';
 	for (int i = 1 ; i < 11 ; i++)
 	{
@@ -132,10 +133,13 @@ ISR(TCD0_OVF_vect)
 	{
 		Buff_L[i+20] = Buf_Tx_R[2][i] ;
 	}
-	
-	
+	//////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////sending packet
 	NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
 	NRF24L01_L_RF_TX();
+	////////////////////////////////////////////////////////////////////////////////////////
+	
 	
 
 	for (uint8_t i=0;i<Max_Robot;i++)
@@ -224,26 +228,18 @@ ISR(PRX_L)
 {
 	wdt_reset();
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
-// 	if((status_L & _RX_DR) == _RX_DR)
-// 	{
-// 		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
-// 		do
-// 		{
-// 			tmprid = ((status_L&0x0e)>>1);
-// 						NRF24L01_L_Flush_TX();
-// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[5], _Buffer_Size);
-// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[3], _Buffer_Size);
-// 						NRF24L01_L_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[4], _Buffer_Size);
-// 						
-// 			//1) read payload through SPI,
-// 			NRF24L01_L_Read_RX_Buf(Buf_Rx_R[tmprid+3], _Buffer_Size);
-// 			//2) clear RX_DR IRQ,
-// 			robotspeed= Buf_Rx_R[1][9]| Buf_Rx_R[1][8]<<8 ;
-// 			status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
-// 			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
-// 			//4) if there are more data in RX FIFO, repeat from step 1).
-// 		} while((NRF24L01_L_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
-// 	}
+	if((status_L & _RX_DR) == _RX_DR)
+	{
+		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
+//		tmprid = ((status_L&0x0e)>>1);						
+		//1) read payload through SPI,
+		NRF24L01_L_Read_RX_Buf(Buf_Rx_R[Robot_Select], _Buffer_Size);
+		//2) clear RX_DR IRQ,
+		status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
+		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
+		//4) if there are more data in RX FIFO, repeat from step 1).
+	}
+	
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_L&_TX_DS) == _TX_DS)
 	{
@@ -251,7 +247,6 @@ ISR(PRX_L)
 	}
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
-		//LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
 		NRF24L01_L_Flush_TX();
 	}
 }
@@ -291,24 +286,36 @@ ISR(USART_L_RXC_vect)
 		case '4':
 		case '5':
 		case '6':
-		test_robot = data - '0';
+		Robot_Select = data ;//- '0';
+		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+		Buff_L[31] = data - '0';
+		break;
+		
+		case '`'://non of robots send ACK to wireless board 
+		Robot_Select = 7 ;//- '0';
+		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+		Buff_L[31] = data;
 		break;
 		
 		case '!':
-		Buf_Tx_R[test_robot][11] = 0;
+//		Robot_Motor = 0;
+// 		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+// 		Buff_L[31] = 0;
 		break;
 		
 		case '@':
-		Buf_Tx_R[test_robot][11] = 1;
+//		Robot_Motor = 1;
+// 		Buff_L[31] = 1;
+// 		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
 		break;
 		
 		case '#':
-		Buf_Tx_R[test_robot][11] = 2;
+//		Robot_Motor = 2;
 		break;
 		
 		case '$':
-		Buf_Tx_R[test_robot][11] = 3;
-		break;	
+//		Robot_Motor = 3;
+		break;
 		
 	};
 
