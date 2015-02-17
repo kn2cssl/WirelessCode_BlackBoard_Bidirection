@@ -89,7 +89,7 @@ int main (void)
 		Robot_D_tmp[i].RID=12;
 	}
 	
-	
+	Buff_L[31]='N';
 	while (1)
 	{
 		data_flag++;
