@@ -365,7 +365,7 @@ char *Address, char Address_Width, char Size_Payload, char Tx_Power)
 
 	// Enable Enhanced ShockBurst
 	NRF24L01_R_Set_ShockBurst(_ShockBurst_OFF);
-	NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x07);
+	NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
 	NRF24L01_R_WriteReg(W_REGISTER | SETUP_RETR, 0x2f);
 	//NRF24L01_L_WriteReg(W_REGISTER | FEATURE, 0x02);  //
 	
@@ -375,13 +375,13 @@ char *Address, char Address_Width, char Size_Payload, char Tx_Power)
 
 	NRF24L01_R_Set_Address_Width(Address_Width);//////////////////////
 
-	NRF24L01_R_Set_RX_Pipe(0, Address_R_P0, Address_Width, Size_Payload);
-	NRF24L01_R_Set_RX_Pipe(1, Address_R_P1, Address_Width, Size_Payload);
-	NRF24L01_R_Set_RX_Pipe(2, Address_R_P2, Address_Width, Size_Payload);
+	NRF24L01_R_Set_RX_Pipe(0, Address, Address_Width, Size_Payload);
+// 	NRF24L01_R_Set_RX_Pipe(1, Address_R_P1, Address_Width, Size_Payload);
+// 	NRF24L01_R_Set_RX_Pipe(2, Address_R_P2, Address_Width, Size_Payload);
 	
 	NRF24L01_R_Set_CH(CH);
 
-	NRF24L01_R_Set_TX_Address(Address_R_P0, Address_Width); // Set Transmit address
+	NRF24L01_R_Set_TX_Address(Address, Address_Width); // Set Transmit address
 
 	// Bits 4..6: Reflect interrupts as active low on the IRQ pin
 	// Bit 3: Enable CRC

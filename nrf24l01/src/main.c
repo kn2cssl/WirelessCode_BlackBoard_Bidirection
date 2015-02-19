@@ -15,6 +15,7 @@
 char Buf_Tx_R[Max_Robot][_Buffer_Size] ;
 char Buf_Rx_R[Max_Robot][_Buffer_Size];
 char Buff_L[_Buffer_Size];
+char Buff_R[_Buffer_Size];
 int tmprid;
 int wireless_reset;
 
@@ -77,8 +78,8 @@ int main (void)
 
 
 	NRF24L01_R_CE_LOW;
-	NRF24L01_R_Init_milad(_RX_MODE, _CH_R, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
-	NRF24L01_R_WriteReg(W_REGISTER | DYNPD,0x07);
+	NRF24L01_R_Init_milad(_TX_MODE, _CH_R, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
+	NRF24L01_R_WriteReg(W_REGISTER | DYNPD,0x01);
 	NRF24L01_R_WriteReg(W_REGISTER | FEATURE,0x06);
 	NRF24L01_R_CE_HIGH;
 
@@ -133,11 +134,30 @@ ISR(TCD0_OVF_vect)
 	{
 		Buff_L[i+20] = Buf_Tx_R[2][i] ;
 	}
+
+	Buff_R[0]='L';
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_R[i] = Buf_Tx_R[3][i] ;
+	}
+
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_R[i+10] = Buf_Tx_R[4][i] ;
+	}
+	
+	for (int i = 1 ; i < 11 ; i++)
+	{
+		Buff_R[i+20] = Buf_Tx_R[5][i] ;
+	}
 	//////////////////////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////////////////////sending packet
 	NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
 	NRF24L01_L_RF_TX();
+	
+	NRF24L01_R_Write_TX_Buf(Buff_R, _Buffer_Size);
+	NRF24L01_R_RF_TX();
 	////////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -187,41 +207,29 @@ ISR(TCD0_OVF_vect)
 
 ISR(PRX_R)
 {		
-// 	wdt_reset();
-// 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
-// 
-// 	if((status_R & _RX_DR) == _RX_DR)
-// 	{
-// 		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
-// 		wireless_reset=0;
-// 		do
-// 		{
-// 			tmprid = ((status_R&0x0e)>>1);
-// 			NRF24L01_R_Flush_TX();
-// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 0, Buf_Tx_R[0] , _Buffer_Size );
-// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 1, Buf_Tx_R[1] , _Buffer_Size );
-// 			NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + 2, Buf_Tx_R[2] , _Buffer_Size );
-// 			//NRF24L01_R_WriteRegBuf(W_ACK_PAYLOAD + tmprid, Buf_ Tx_R[tmprid], _Buffer_Size);
-// 			//1) read payload through SPI,
-// 			NRF24L01_R_Read_RX_Buf(Buf_Rx_R[tmprid], _Buffer_Size);
-// 			//2) clear RX_DR IRQ,
-// 			status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
-// 			//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
-// 			//4) if there are more data in RX FIFO, repeat from step 1).
-// 		} while((NRF24L01_R_ReadReg(FIFO_STATUS)&RX_EMPTY) == 0x00);
-// 	}
-// 	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
-// 	if((status_R&_TX_DS) == _TX_DS)
-// 	{
-// 		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
-// 		wireless_reset=0;
-// 	}
-// 	if ((status_R&_MAX_RT) == _MAX_RT)
-// 	{
-// 		//LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
-// 		NRF24L01_R_Flush_TX();
-// 	}
+	wdt_reset();
+	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
+	if((status_R & _RX_DR) == _RX_DR)
+	{
+		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
+//		tmprid = ((status_R&0x0e)>>1);						
+		//1) read payload through SPI,
+		NRF24L01_R_Read_RX_Buf(Buf_Rx_R[Robot_Select], _Buffer_Size);
+		//2) clear RX_DR IRQ,
+		status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
+		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
+		//4) if there are more data in RX FIFO, repeat from step 1).
+	}
 	
+	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
+	if((status_R&_TX_DS) == _TX_DS)
+	{
+		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
+	}
+	if ((status_R&_MAX_RT) == _MAX_RT)
+	{
+		NRF24L01_R_Flush_TX();
+	}
 }
 
 ISR(PRX_L)
@@ -285,16 +293,35 @@ ISR(USART_L_RXC_vect)
 		case '3':
 		case '4':
 		case '5':
-		case '6':
 		Robot_Select = data ;//- '0';
-		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+		if (data < 3)
+		{
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+		}
+		else
+		{
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+		
+		if (data > 2)
+		{
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
+		}
+		else
+		{
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+
 		Buff_L[31] = data - '0';
+		Buff_R[31] = data - '0';
 		break;
 		
 		case '`'://non of robots send ACK to wireless board 
 		Robot_Select = 7 ;//- '0';
 		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+		NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
 		Buff_L[31] = data;
+		Buff_R[31] = data;
 		break;
 		
 		case '!':
