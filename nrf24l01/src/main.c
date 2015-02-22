@@ -293,8 +293,8 @@ ISR(USART_L_RXC_vect)
 		case '3':
 		case '4':
 		case '5':
-		Robot_Select = data ;//- '0';
-		if (data < 3)
+		Robot_Select = data - '0' ;
+		if (Robot_Select < 3)
 		{
 			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
 		}
@@ -303,7 +303,7 @@ ISR(USART_L_RXC_vect)
 			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
 		}
 		
-		if (data > 2)
+		if (Robot_Select > 2)
 		{
 			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
 		}
@@ -312,8 +312,8 @@ ISR(USART_L_RXC_vect)
 			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
 		}
 
-		Buff_L[31] = data - '0';
-		Buff_R[31] = data - '0';
+		Buff_L[31] = Robot_Select;
+		Buff_R[31] = Robot_Select;
 		break;
 		
 		case '`'://non of robots send ACK to wireless board 
