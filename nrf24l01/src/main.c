@@ -93,18 +93,17 @@ int main (void)
 	Buff_L[31]='N';
 	while (1)
 	{
-		data_flag++;
-		if (data_flag ==15)
+		if (data_flag ==1)
 		{
-			count = sprintf(str,"%d,%d,%d,%d,%d\r",
-			((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
-			((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
-			((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
-			((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
-			 time);
-			for (uint8_t i=0;i<count;i++)
-			usart_putchar(&USARTE0,str[i]);
-			data_flag = 0 ;
+// 			count = sprintf(str,"%d,%d,%d,%d,%d\r",
+// 			((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
+// 			((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
+// 			((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
+// 			((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
+// 			 time);
+// 			for (uint8_t i=0;i<count;i++)
+// 			usart_putchar(&USARTE0,str[i]);
+			//data_flag = 0 ;
 		}
 		
 		
@@ -117,6 +116,7 @@ ISR(TCD0_OVF_vect)
 	wdt_reset();
 	wireless_reset++;
 	time++;
+	if(time ==200)time=0;
 	
 	/////////////////////////////////packeting three robot data in one packet
 	Buff_L[0]='L';
@@ -153,11 +153,20 @@ ISR(TCD0_OVF_vect)
 	//////////////////////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////////////////////sending packet
-	NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
-	NRF24L01_L_RF_TX();
-	
-	NRF24L01_R_Write_TX_Buf(Buff_R, _Buffer_Size);
-	NRF24L01_R_RF_TX();
+// 	if (wireless_reset==1)
+// 	{
+			NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
+			NRF24L01_L_RF_TX();
+			
+			NRF24L01_R_Write_TX_Buf(Buff_R, _Buffer_Size);
+			if (Buff_R[29]!=0)
+			{
+				LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
+			}
+
+			NRF24L01_R_RF_TX();
+		wireless_reset = 0;
+/*	}*/
 	////////////////////////////////////////////////////////////////////////////////////////
 	
 	
@@ -218,7 +227,19 @@ ISR(PRX_R)
 		//2) clear RX_DR IRQ,
 		status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
-		//4) if there are more data in RX FIFO, repeat from step 1).
+		//4) if there are more data in RX FIFO, repeat from step 1).Buf_Tx_R
+		int a =((int)(Buf_Tx_R[Robot_Select][1]<<8) & 0xff00) | ((int)(Buf_Tx_R[Robot_Select][2]) & 0x0ff);
+		int b =((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff);
+						count = sprintf(str,"%d,%d,%d,%d,%d,%d,%d\r",
+						((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
+						((int)(Buf_Tx_R[Robot_Select][1]<<8) & 0xff00) | ((int)(Buf_Tx_R[Robot_Select][2]) & 0x0ff),
+						a-b,
+						((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
+						((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
+						((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
+						time);
+						for (uint8_t i=0;i<count;i++)
+						usart_putchar(&USARTE0,str[i]);
 	}
 	
 	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
@@ -230,6 +251,7 @@ ISR(PRX_R)
 	{
 		NRF24L01_R_Flush_TX();
 	}
+	data_flag = 1;
 }
 
 ISR(PRX_L)
@@ -246,6 +268,14 @@ ISR(PRX_L)
 		status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).
+						count = sprintf(str,"%d,%d,%d,%d,%d\r",
+						((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
+						((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
+						((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
+						((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
+						time);
+						for (uint8_t i=0;i<count;i++)
+						usart_putchar(&USARTE0,str[i]);
 	}
 	
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
@@ -257,6 +287,7 @@ ISR(PRX_L)
 	{
 		NRF24L01_L_Flush_TX();
 	}
+	data_flag = 1;
 }
 
 ISR(USART_R_RXC_vect)
