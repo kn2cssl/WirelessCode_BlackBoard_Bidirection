@@ -228,12 +228,8 @@ ISR(PRX_R)
 		status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).Buf_Tx_R
-		int a =((int)(Buf_Tx_R[Robot_Select][1]<<8) & 0xff00) | ((int)(Buf_Tx_R[Robot_Select][2]) & 0x0ff);
-		int b =((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff);
-						count = sprintf(str,"%d,%d,%d,%d,%d,%d,%d\r",
+						count = sprintf(str,"%d,%d,%d,%d,%d\r",
 						((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
-						((int)(Buf_Tx_R[Robot_Select][1]<<8) & 0xff00) | ((int)(Buf_Tx_R[Robot_Select][2]) & 0x0ff),
-						a-b,
 						((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
 						((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
 						((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff),
