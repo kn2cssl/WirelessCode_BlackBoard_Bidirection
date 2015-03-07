@@ -367,7 +367,7 @@ char *Address, char Address_Width, char Size_Payload, char Tx_Power) {
 	// Bit 3: Enable CRC
 	// Bit 2: CRC 1 Byte
 	// Bit 1: Power Up
-	NRF24L01_L_WriteReg(W_REGISTER | CONFIG, 0b00001010 | Device_Mode);
+	NRF24L01_L_WriteReg(W_REGISTER | CONFIG, 0b00001110 | Device_Mode);
 
 	_delay_us(1500);
 }
