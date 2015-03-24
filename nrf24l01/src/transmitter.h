@@ -174,8 +174,6 @@ static void GetNewData(uint8_t data,int side)
 			
 				for (uint8_t i=0;i<Max_Robot;i++)
 				{
-					if (side == R && i<3 || side == L && i>2)
-					{
 					
 					
 						if (Robot_D_tmp[side][i].RID!=12)
@@ -207,7 +205,6 @@ static void GetNewData(uint8_t data,int side)
 								pck_timeout[side][Robot_D[side][i].RID]=0;
 							}
 						}
-					}
 				}
 			}
 			PCK_Num[side] = 0;
