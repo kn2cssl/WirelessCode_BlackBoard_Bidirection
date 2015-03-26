@@ -32,7 +32,7 @@ int time;
 int timer=0;
 int data_flag = 0;
 bool battery_flag = false;
-
+bool packet_turn = true;
 uint16_t pck_timeout[2][Max_Robot];
 
 int main (void)
@@ -344,77 +344,153 @@ ISR(USART_L_DRE_vect) //Wireless_R_USART
 
 void packing_data(void)
 {
-	if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-	{
-		Buff_L[0]='L';
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_L[i] = Buf_Tx[R][0][i] ;
-		}
 
-		for (int i = 1 ; i < 11 ; i++)
+if (packet_turn)
+{
+		if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
 		{
-			Buff_L[i+10] = Buf_Tx[R][1][i] ;
-		}
-		
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_L[i+20] = Buf_Tx[R][2][i] ;
-		}
+			Buff_R[0]=0x0A;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i] = Buf_Tx[R][0][i] ;
+			}
 
-		Buff_R[0]='L';
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_R[i] = Buf_Tx[L][3][i] ;
-		}
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+10] = Buf_Tx[R][1][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+20] = Buf_Tx[R][2][i] ;
+			}
 
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_R[i+10] = Buf_Tx[L][4][i] ;
-		}
-		
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_R[i+20] = Buf_Tx[L][5][i] ;
-		}
-		
-	}
-	else
-	{
-		Buff_L[0]='L';
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_L[i] = Buf_Tx[R][0][i] ;
-		}
+			Buff_L[0]=0x0A;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i] = Buf_Tx[L][6][i] ;
+			}
 
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_L[i+10] = Buf_Tx[R][1][i] ;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+10] = Buf_Tx[L][7][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+20] = Buf_Tx[L][8][i] ;
+			}
+			
 		}
-		
-		for (int i = 1 ; i < 11 ; i++)
+		else
 		{
-			Buff_L[i+20] = Buf_Tx[R][2][i] ;
-		}
+			Buff_R[0]=0x0A;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i] = Buf_Tx[R][0][i] ;
+			}
 
-		Buff_R[0]='L';
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_R[i] = Buf_Tx[R][3][i] ;
-		}
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+10] = Buf_Tx[R][1][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+20] = Buf_Tx[R][2][i] ;
+			}
 
-		for (int i = 1 ; i < 11 ; i++)
-		{
-			Buff_R[i+10] = Buf_Tx[R][4][i] ;
+			Buff_L[0]=0x0A;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i] = Buf_Tx[R][6][i] ;
+			}
+
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+10] = Buf_Tx[R][7][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+20] = Buf_Tx[R][8][i] ;
+			}
 		}
-		
-		for (int i = 1 ; i < 11 ; i++)
+} 
+else
+{
+		if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
 		{
-			Buff_R[i+20] = Buf_Tx[R][5][i] ;
+			Buff_R[0]=0xA0;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i] = Buf_Tx[R][3][i] ;
+			}
+
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+10] = Buf_Tx[R][4][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+20] = Buf_Tx[R][5][i] ;
+			}
+
+			Buff_L[0]=0xA0;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i] = Buf_Tx[L][9][i] ;
+			}
+
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+10] = Buf_Tx[L][10][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+20] = Buf_Tx[L][11][i] ;
+			}
+			
 		}
-	}
+		else
+		{
+			Buff_R[0]=0xA0;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i] = Buf_Tx[R][3][i] ;
+			}
+
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+10] = Buf_Tx[R][4][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_R[i+20] = Buf_Tx[R][5][i] ;
+			}
+
+			Buff_L[0]=0xA0;
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i] = Buf_Tx[R][9][i] ;
+			}
+
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+10] = Buf_Tx[R][10][i] ;
+			}
+			
+			for (int i = 1 ; i < 11 ; i++)
+			{
+				Buff_L[i+20] = Buf_Tx[R][11][i] ;
+			}
+		}
+}
 	
-	
+			packet_turn = !packet_turn;
 }
 
 void stoping_robot(void)
@@ -424,8 +500,8 @@ void stoping_robot(void)
 		int side;
 		if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
 		{
-			if(i<3)side = R;
-			if(i>2)side = L;
+			if(i<6)side = R;
+			if(i>5)side = L;
 		}
 		else
 		{
