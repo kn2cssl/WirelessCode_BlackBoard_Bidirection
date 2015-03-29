@@ -13,9 +13,10 @@
 
 void packing_data(void);
 void stoping_robot(void);
+void battery_check(void);
 
 char Buf_Tx[2][Max_Robot][_Buffer_Size] ;
-char Buf_Rx_R[Max_Robot][_Buffer_Size];
+char Buf_Rx[Max_Robot][_Buffer_Size];
 char Buff_L[_Buffer_Size];
 char Buff_R[_Buffer_Size];
 int tmprid;
@@ -95,8 +96,7 @@ int main (void)
 	
 	while (1)
 	{
-		
-		
+
 		
 	}
 }
@@ -107,66 +107,24 @@ ISR(TCD0_OVF_vect)
 	wdt_reset();
 	wireless_reset++;
 	time++;
-	if(time ==100)time=0;
-	
-// 		count = sprintf(str,"%d,%d,%d,%d\r",
-// 		((int)(Buf_Rx_R[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][1]) & 0x0ff),
-// 		((int)(Buf_Rx_R[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][3]) & 0x0ff),
-// 		((int)(Buf_Rx_R[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][5]) & 0x0ff),
-// 		((int)(Buf_Rx_R[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][7]) & 0x0ff));
-// 		for (uint8_t i=0;i<count;i++)
-// 		usart_putchar(&USARTE0,str[i]);
-	
-	if (time==1 && !(Menu_PORT.IN & Menu_Side_Select_PIN_bm) && battery_flag)
+	display_counter++;
+	if(display_counter>1000)display_counter=0;
+	if (time == 100)
 	{
-		Robot_Select++;
-		if (Robot_Select < 3)
-		{
-			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
-		}
-		else
-		{
-			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
-		}
-			
-		if (Robot_Select > 2)
-		{
-			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
-		}
-		else
-		{
-			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
-		}
+	LED_White_R_PORT.OUTCLR = LED_White_R_PIN_bm;
+	LED_White_L_PORT.OUTCLR = LED_White_L_PIN_bm;
+	LED_Green_R_PORT.OUTCLR = LED_Green_R_PIN_bm;
+	LED_Green_L_PORT.OUTCLR = LED_Green_L_PIN_bm;
+	
+		time=0;
+	}
+	
+			battery_check();
 
-		Buff_L[31] = Robot_Select;
-		Buff_R[31] = Robot_Select;
-
-
-		if (Robot_Select==6)
-		{
-			Robot_Select=0;
-			for(Robot_Select=0;Robot_Select<6;Robot_Select++)
-			{
-					int battery = ((int)(Buf_Rx_R[Robot_Select][14]<<8) & 0xff00) | ((int)(Buf_Rx_R[Robot_Select][15]) & 0x0ff);
-					count = sprintf(str,"Battery(%d):%d.%d  ",Robot_Select,battery/100,battery%100 );
-					
-					for (uint8_t i=0;i<count;i++)
-					usart_putchar(&USARTE0,str[i]);
-			}
-								count = sprintf(str,"\r");
-								for (uint8_t i=0;i<count;i++)
-								usart_putchar(&USARTE0,str[i]);
-								
-// 							 		NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
-// 							 		NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
-// 							 		Buff_L[31] = '`';
-// 							 		Buff_R[31] = '`';
-			
-		}
 			
 		
 
-	}
+
 	
 	/////////////////////////////////packeting three robot data in one packet
 	packing_data();
@@ -200,21 +158,33 @@ ISR(PRX_R)//ID:3,4,5
 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
 	if((status_R & _RX_DR) == _RX_DR)
 	{
-		LED_White_R_PORT.OUTTGL = LED_White_R_PIN_bm;
+		LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
 		//		tmprid = ((status_R&0x0e)>>1);
 		//1) read payload through SPI,
-		NRF24L01_R_Read_RX_Buf(Buf_Rx_R[Robot_Select], _Buffer_Size);
+		NRF24L01_R_Read_RX_Buf(Buf_Rx[Robot_Select], _Buffer_Size);
 		//2) clear RX_DR IRQ,
 		status_R=NRF24L01_R_WriteReg(W_REGISTER | STATUSe, _RX_DR );
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).Buf_Tx[R]
+		
+		if (!battery_flag && display_counter>50)
+		{
+			count = sprintf(str,"%d,%d,%d,%d,%d\r",
+			((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
+			time);
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
+		}
 
 	}
 	
 	status_R = NRF24L01_R_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_R&_TX_DS) == _TX_DS)
 	{
-		LED_Green_R_PORT.OUTTGL = LED_Green_R_PIN_bm;
+		LED_Green_R_PORT.OUTSET = LED_Green_R_PIN_bm;
 	}
 	if ((status_R&_MAX_RT) == _MAX_RT)
 	{
@@ -229,21 +199,33 @@ ISR(PRX_L)//ID:0,1,2
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
 	if((status_L & _RX_DR) == _RX_DR)
 	{
-		LED_White_L_PORT.OUTTGL = LED_White_L_PIN_bm;
+		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
 		//		tmprid = ((status_L&0x0e)>>1);
 		//1) read payload through SPI,
-		NRF24L01_L_Read_RX_Buf(Buf_Rx_R[Robot_Select], _Buffer_Size);
+		NRF24L01_L_Read_RX_Buf(Buf_Rx[Robot_Select], _Buffer_Size);
 		//2) clear RX_DR IRQ,
 		status_L=NRF24L01_L_WriteReg(W_REGISTER | STATUSe, _RX_DR );
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).
+		
+		if (!battery_flag && display_counter>50)
+		{
+					count = sprintf(str,"%d,%d,%d,%d,%d\r",
+					((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
+					((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
+					((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
+					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
+					time);
+					for (uint8_t i=0;i<count;i++)
+					usart_putchar(&USARTE0,str[i]);
+		}
 
 	}
 	
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_L&_TX_DS) == _TX_DS)
 	{
-		LED_Green_L_PORT.OUTTGL = LED_Green_L_PIN_bm;
+		LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;
 	}
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
@@ -293,17 +275,12 @@ ISR(USART_L_RXC_vect)
 			case '3':
 			case '4':
 			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
 			Robot_Select = data - '0' ;
-			if (Robot_Select < 3)
-			{
-				NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
-			}
-			else
-			{
-				NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
-			}
-			
-			if (Robot_Select > 2)
+			if (Robot_Select < 6)
 			{
 				NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
 			}
@@ -311,13 +288,22 @@ ISR(USART_L_RXC_vect)
 			{
 				NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
 			}
+			
+			if (Robot_Select > 5)
+			{
+				NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+			}
+			else
+			{
+				NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+			}
 
 			Buff_L[31] = Robot_Select;
 			Buff_R[31] = Robot_Select;
 			break;
 			
 			case '`'://non of robots send ACK to wireless board
-			Robot_Select = 7 ;//- '0';
+			Robot_Select = 12 ;//- '0';
 			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
 			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
 			Buff_L[31] = data;
@@ -544,4 +530,59 @@ void stoping_robot(void)
 			}
 		}
 	}
+}
+
+void battery_check(void)
+{
+	if (time == 1 && !(Menu_PORT.IN & Menu_Side_Select_PIN_bm) && battery_flag)/////should be out of timer int?!!!!!
+	{
+		
+		Robot_Select++;
+		if (Robot_Select < 6)
+		{
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
+		}
+		else
+		{
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+		
+		if (Robot_Select > 5)
+		{
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+		}
+		else
+		{
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+
+		Buff_L[31] = Robot_Select;
+		Buff_R[31] = Robot_Select;
+
+
+		if (Robot_Select==6)
+		{
+			for(Robot_Select=0;Robot_Select<6;Robot_Select++)
+			{
+				int battery = ((int)(Buf_Rx[Robot_Select][14]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][15]) & 0x0ff);
+				count = sprintf(str,"Battery(%d):%d.%d  ",Robot_Select,battery/100,battery%100 );
+				
+				for (uint8_t i=0;i<count;i++)
+				usart_putchar(&USARTE0,str[i]);
+			}
+			count = sprintf(str,"\r");
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
+			
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
+			
+			Buff_L[31] = '`';
+			Buff_R[31] = '`';
+			Robot_Select=0;
+			battery_flag=false;
+			
+		}
+	}
+	
 }
