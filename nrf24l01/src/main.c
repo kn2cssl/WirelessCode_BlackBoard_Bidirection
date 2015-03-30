@@ -31,7 +31,6 @@ int test_motor;
 int Robot_Select;
 int time;
 int timer=0;
-int data_flag = 0;
 bool battery_flag = false;
 bool packet_turn = true;
 uint16_t pck_timeout[2][Max_Robot];
@@ -96,7 +95,6 @@ int main (void)
 	
 	while (1)
 	{
-
 		
 	}
 }
@@ -109,7 +107,7 @@ ISR(TCD0_OVF_vect)
 	time++;
 	display_counter++;
 	if(display_counter>1000)display_counter=0;
-	if (time == 100)
+	if (time == 10)
 	{
 	LED_White_R_PORT.OUTCLR = LED_White_R_PIN_bm;
 	LED_White_L_PORT.OUTCLR = LED_White_L_PIN_bm;
@@ -121,13 +119,9 @@ ISR(TCD0_OVF_vect)
 	
 			battery_check();
 
-			
-		
-
-
-	
 	/////////////////////////////////packeting three robot data in one packet
-	packing_data();
+	
+	packing_data();//parametersConnection1:0x2c ~ 1ms
 
 	//////////////////////////////////////////////////////////////////////////sending packet
 	// 	if (wireless_reset==1)
@@ -136,11 +130,6 @@ ISR(TCD0_OVF_vect)
 	NRF24L01_L_RF_TX();
 	
 	NRF24L01_R_Write_TX_Buf(Buff_R, _Buffer_Size);
-	if (Buff_R[29]!=0)
-	{
-		LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
-	}
-
 	NRF24L01_R_RF_TX();
 	wireless_reset = 0;
 	/*	}*/
@@ -189,8 +178,8 @@ ISR(PRX_R)//ID:3,4,5
 	if ((status_R&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_R_Flush_TX();
+		LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;
 	}
-	data_flag = 1;
 }
 
 ISR(PRX_L)//ID:0,1,2
@@ -199,7 +188,7 @@ ISR(PRX_L)//ID:0,1,2
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
 	if((status_L & _RX_DR) == _RX_DR)
 	{
-		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
+		//LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//		tmprid = ((status_L&0x0e)>>1);
 		//1) read payload through SPI,
 		NRF24L01_L_Read_RX_Buf(Buf_Rx[Robot_Select], _Buffer_Size);
@@ -225,13 +214,12 @@ ISR(PRX_L)//ID:0,1,2
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_L&_TX_DS) == _TX_DS)
 	{
-		LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;
+		//LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	}
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_L_Flush_TX();
 	}
-	data_flag = 1;
 }
 
 ISR(USART_R_RXC_vect)
