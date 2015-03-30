@@ -178,7 +178,6 @@ ISR(PRX_R)//ID:3,4,5
 	if ((status_R&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_R_Flush_TX();
-		LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;
 	}
 }
 
@@ -188,7 +187,7 @@ ISR(PRX_L)//ID:0,1,2
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
 	if((status_L & _RX_DR) == _RX_DR)
 	{
-		//LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
 		//		tmprid = ((status_L&0x0e)>>1);
 		//1) read payload through SPI,
 		NRF24L01_L_Read_RX_Buf(Buf_Rx[Robot_Select], _Buffer_Size);
@@ -214,7 +213,7 @@ ISR(PRX_L)//ID:0,1,2
 	status_L = NRF24L01_L_WriteReg(W_REGISTER|STATUSe,_TX_DS|_MAX_RT);
 	if((status_L&_TX_DS) == _TX_DS)
 	{
-		//LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		LED_Green_L_PORT.OUTSET = LED_Green_L_PIN_bm;
 	}
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
