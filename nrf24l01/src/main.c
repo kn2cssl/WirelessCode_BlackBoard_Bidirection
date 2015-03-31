@@ -11,9 +11,10 @@
 #include "lcd.h"
 #include "transmitter.h"
 
-void packing_data(void);
-void stoping_robot(void);
-void battery_check(void);
+void packing_data (void);
+void stoping_robot (void);
+void Battery_Check (void);
+void Wireless_Recoonection (void);
 
 char Buf_Tx[2][Max_Robot][_Buffer_Size] ;
 char Buf_Rx[Max_Robot][_Buffer_Size];
@@ -28,9 +29,15 @@ uint8_t count;
 int display_counter = 0;
 int16_t M3RPM;
 int test_motor;
-int Robot_Select;
+int Robot_Select ;
+int Reconnecting_Robot ;
+int LED_time;
+int Wireless_Recoonection_Time;
 int time;
 int timer=0;
+int _MAX_RT_counter=0;
+bool NRF_R_reconnection = false;
+bool NRF_L_reconnection = false;
 bool battery_flag = false;
 bool packet_turn = true;
 uint16_t pck_timeout[2][Max_Robot];
@@ -103,21 +110,25 @@ int main (void)
 ISR(TCD0_OVF_vect)
 {
 	wdt_reset();
-	wireless_reset++;
 	time++;
+	wireless_reset++;
+	LED_time++;
 	display_counter++;
 	if(display_counter>1000)display_counter=0;
-	if (time == 10)
+	if (LED_time == 10)
 	{
 	LED_White_R_PORT.OUTCLR = LED_White_R_PIN_bm;
 	LED_White_L_PORT.OUTCLR = LED_White_L_PIN_bm;
 	LED_Green_R_PORT.OUTCLR = LED_Green_R_PIN_bm;
 	LED_Green_L_PORT.OUTCLR = LED_Green_L_PIN_bm;
 	
-		time=0;
+		LED_time=0;
 	}
 	
-			battery_check();
+
+	Wireless_Recoonection ();
+	
+	Battery_Check();
 
 	/////////////////////////////////packeting three robot data in one packet
 	
@@ -135,7 +146,7 @@ ISR(TCD0_OVF_vect)
 	/*	}*/
 	////////////////////////////////////////////////////////////////////////////////////////
 	
-stoping_robot();
+	stoping_robot();
 
 	while(Menu_PORT.IN & Menu_Side_Switch_PIN_bm);
 	wdt_reset();
@@ -158,12 +169,11 @@ ISR(PRX_R)//ID:3,4,5
 		
 		if (!battery_flag && display_counter>50)
 		{
-			count = sprintf(str,"%d,%d,%d,%d,%d\r",
+			count = sprintf(str,"%d,%d,%d,%d\r",
 			((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
 			((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
 			((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
-			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
-			time);
+			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff));
 			for (uint8_t i=0;i<count;i++)
 			usart_putchar(&USARTE0,str[i]);
 		}
@@ -175,9 +185,25 @@ ISR(PRX_R)//ID:3,4,5
 	{
 		LED_Green_R_PORT.OUTSET = LED_Green_R_PIN_bm;
 	}
+	
 	if ((status_R&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_R_Flush_TX();
+		
+		LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
+		_MAX_RT_counter++;
+		if (_MAX_RT_counter == 20)//it stops the answering robot from answering
+		{
+			Buff_L[31] = 12;
+			Buff_R[31] = 12;
+		}
+		if (_MAX_RT_counter > 30)//it stops wirelessBoard from hearing answer
+		{
+			_MAX_RT_counter=0;
+			NRF_R_reconnection = true;
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+
 	}
 }
 
@@ -198,12 +224,11 @@ ISR(PRX_L)//ID:0,1,2
 		
 		if (!battery_flag && display_counter>50)
 		{
-					count = sprintf(str,"%d,%d,%d,%d,%d\r",
+					count = sprintf(str,"%d,%d,%d,%d\r",
 					((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
 					((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
 					((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
-					time);
+					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff));
 					for (uint8_t i=0;i<count;i++)
 					usart_putchar(&USARTE0,str[i]);
 		}
@@ -218,6 +243,21 @@ ISR(PRX_L)//ID:0,1,2
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_L_Flush_TX();
+		
+		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
+		_MAX_RT_counter++;
+		if (_MAX_RT_counter == 20)//it stops the answering robot from answering
+		{
+			Buff_L[31] = 12;
+			Buff_R[31] = 12;
+		}
+		if (_MAX_RT_counter > 30)//it stops wirelessBoard from hearing answer
+		{
+			_MAX_RT_counter=0;
+			NRF_L_reconnection = true;
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
+		}
+
 	}
 }
 
@@ -519,7 +559,7 @@ void stoping_robot(void)
 	}
 }
 
-void battery_check(void)
+void Battery_Check (void)
 {
 	if (time == 1 && !(Menu_PORT.IN & Menu_Side_Select_PIN_bm) && battery_flag)/////should be out of timer int?!!!!!
 	{
@@ -572,4 +612,31 @@ void battery_check(void)
 		}
 	}
 	
+}
+
+void Wireless_Recoonection (void)
+{
+	if (NRF_L_reconnection || NRF_R_reconnection)
+	{
+		Wireless_Recoonection_Time++;
+	}
+	
+	if (Wireless_Recoonection_Time>1000)
+	{
+		Wireless_Recoonection_Time=0;
+		if (NRF_R_reconnection)
+		{
+			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
+			NRF_R_reconnection = false;
+		}
+		
+
+		if (NRF_L_reconnection)
+		{
+			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x01);
+			NRF_L_reconnection = false;
+		}
+		Buff_L[31] = Robot_Select;
+		Buff_R[31] = Robot_Select;
+	}
 }
