@@ -169,11 +169,12 @@ ISR(PRX_R)//ID:3,4,5
 		
 		if (!battery_flag && display_counter>50)
 		{
-			count = sprintf(str,"%d,%d,%d,%d\r",
+			count = sprintf(str,"%d,%d,%d,%d,%d\r",
 			((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
 			((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
 			((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
-			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff));
+			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][8]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][9]) & 0x0ff));
 			for (uint8_t i=0;i<count;i++)
 			usart_putchar(&USARTE0,str[i]);
 		}
@@ -224,11 +225,12 @@ ISR(PRX_L)//ID:0,1,2
 		
 		if (!battery_flag && display_counter>50)
 		{
-					count = sprintf(str,"%d,%d,%d,%d\r",
+					count = sprintf(str,"%d,%d,%d,%d,%d\r",
 					((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
 					((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
 					((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff));
+					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
+					((int)(Buf_Rx[Robot_Select][8]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][9]) & 0x0ff));
 					for (uint8_t i=0;i<count;i++)
 					usart_putchar(&USARTE0,str[i]);
 		}
