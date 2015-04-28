@@ -6,7 +6,7 @@
 #ifndef NRF24L01_R_H_
 #define NRF24L01_R_H_
 #include "nfr24l01.h"
-#define	_CH_R 50			// Channel 0..125
+#define	_CH_R 1			// Channel 0..125
 /************************************************************************/
 /* Board Initialize                                                     */
 /************************************************************************/
@@ -219,6 +219,7 @@ char NRF24L01_R_Clear_Interrupts(void);
 void NRF24L01_R_Set_TX_Address(char *Address, int Size);
 void NRF24L01_R_Flush_TX(void);
 void NRF24L01_R_Flush_RX(void);
+void NRF24L01_R_NOACK_TX(void);
 void NRF24L01_R_Init(char Device_Mode, char CH, char DataRate,
 		char *Address, char Address_Width, char Size_Payload, char Tx_Power);
 void NRF24L01_R_Init_milad(char Device_Mode, char CH, char DataRate,

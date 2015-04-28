@@ -40,11 +40,12 @@ void PORT_init(void)
 	Wireless_R_PORT.OUTSET=Wireless_TX_R_PIN_bm;
 };
 
-#define TIMERD0_PER 0x7D
+#define TIMERD0_PER 0x7C
 void TimerD0_init(void)
 {
 	tc_write_clock_source(&TCD0,TC_CLKSEL_DIV256_gc);
 	tc_set_wgm(&TCD0,TC_WG_NORMAL);
+	tc_set_8bits_mode(&TCD0);
 	tc_set_overflow_interrupt_level(&TCD0,TC_INT_LVL_LO);
 	tc_write_period(&TCD0,TIMERD0_PER);
 	tc_set_direction(&TCD0,TC_UP);
