@@ -41,6 +41,9 @@ bool NRF_L_reconnection = false;
 bool battery_flag = false;
 bool packet_turn = true;
 uint16_t pck_timeout[2][Max_Robot];
+int cv = 0;
+int16_t r_id = 0 , l_id = 6 ;
+bool wireless_change_r =false , wireless_change_l = false;
 
 int main (void)
 {
@@ -102,14 +105,14 @@ int main (void)
 	
 	while (1)
 	{
-		
+
 	}
 }
 
 
 ISR(TCD0_OVF_vect)
-
 {
+	cv++ ;
 	wdt_reset();
 	time++;
 	wireless_reset++;
@@ -138,11 +141,41 @@ ISR(TCD0_OVF_vect)
 	//////////////////////////////////////////////////////////////////////////sending packet
 	// 	if (wireless_reset==1)
 	// 	{
-	NRF24L01_L_Write_TX_Buf(Buff_L, _Buffer_Size);
+		if (wireless_change_r)
+		{
+			r_id ++ ;
+			if (r_id == 6)
+			{
+				r_id = 0 ;
+			}
+			Address[4] =   ((r_id) << 4) | r_id ;
+			NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);
+			NRF24L01_R_Set_TX_Address(Address, 5); // Set Transmit address
+			
+		}
+		
+		if (wireless_change_l)
+		{
+			l_id ++ ;
+			if (l_id == 6)
+			{
+				l_id = 0 ;
+			}
+			Address[4] =   ((l_id) << 4) | l_id ;
+			NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
+			NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
+			
+		}
+		 		
+		
+	NRF24L01_L_Write_TX_Buf(Buf_Tx[R][l_id], _Buffer_Size);
 	NRF24L01_L_RF_TX();
 	
-	NRF24L01_R_Write_TX_Buf(Buff_R, _Buffer_Size);
+	NRF24L01_R_Write_TX_Buf(Buf_Tx[R][r_id], _Buffer_Size);
 	NRF24L01_R_RF_TX();
+	wireless_change_r = false ;
+	wireless_change_l = false ;
+
 	wireless_reset = 0;
 	/*	}*/
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -159,6 +192,7 @@ ISR(PRX_R)//ID:3,4,5
 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
 	if((status_R & _RX_DR) == _RX_DR)
 	{
+		wireless_change_r = true ;
 		LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
 		//		tmprid = ((status_R&0x0e)>>1);
 		//1) read payload through SPI,
@@ -168,7 +202,7 @@ ISR(PRX_R)//ID:3,4,5
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).Buf_Tx[R]
 		
-		if (!battery_flag && display_counter>50)
+		if (!battery_flag && display_counter>3 && Robot_Select == r_id)
 		{
 			count = sprintf(str,"%d,%d,%d,%d,%d\r",
 			((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
@@ -190,22 +224,9 @@ ISR(PRX_R)//ID:3,4,5
 	
 	if ((status_R&_MAX_RT) == _MAX_RT)
 	{
+		wireless_change_r = true ;	
 		NRF24L01_R_Flush_TX();
-		
 		LED_White_R_PORT.OUTSET = LED_White_R_PIN_bm;
-		_MAX_RT_counter++;
-		if (_MAX_RT_counter == 20)//it stops the answering robot from answering
-		{
-			Buff_L[31] = 12;
-			Buff_R[31] = 12;
-		}
-		if (_MAX_RT_counter > 30)//it stops wirelessBoard from hearing answer
-		{
-			_MAX_RT_counter=0;
-			NRF_R_reconnection = true;
-			NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
-		}
-
 	}
 }
 
@@ -215,6 +236,7 @@ ISR(PRX_L)//ID:0,1,2
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
 	if((status_L & _RX_DR) == _RX_DR)
 	{
+		wireless_change_l = true ;
 		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
 		//		tmprid = ((status_L&0x0e)>>1);
 		//1) read payload through SPI,
@@ -224,16 +246,16 @@ ISR(PRX_L)//ID:0,1,2
 		//3) read FIFO_STATUS to check if there are more payloads available in RX FIFO,
 		//4) if there are more data in RX FIFO, repeat from step 1).
 		
-		if (!battery_flag && display_counter>50)
+		if (!battery_flag && display_counter>3 && Robot_Select == l_id)
 		{
-					count = sprintf(str,"%d,%d,%d,%d,%d\r",
-					((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
-					((int)(Buf_Rx[Robot_Select][8]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][9]) & 0x0ff));
-					for (uint8_t i=0;i<count;i++)
-					usart_putchar(&USARTE0,str[i]);
+			count = sprintf(str,"%d,%d,%d,%d,%d\r",
+			((int)(Buf_Rx[Robot_Select][0]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][1]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][2]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][3]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][4]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][5]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][6]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][7]) & 0x0ff),
+			((int)(Buf_Rx[Robot_Select][8]<<8) & 0xff00) | ((int)(Buf_Rx[Robot_Select][9]) & 0x0ff));
+			for (uint8_t i=0;i<count;i++)
+			usart_putchar(&USARTE0,str[i]);
 		}
 
 	}
@@ -246,20 +268,8 @@ ISR(PRX_L)//ID:0,1,2
 	if ((status_L&_MAX_RT) == _MAX_RT)
 	{
 		NRF24L01_L_Flush_TX();
-		
+		wireless_change_l = true ;
 		LED_White_L_PORT.OUTSET = LED_White_L_PIN_bm;
-		_MAX_RT_counter++;
-		if (_MAX_RT_counter == 20)//it stops the answering robot from answering
-		{
-			Buff_L[31] = 12;
-			Buff_R[31] = 12;
-		}
-		if (_MAX_RT_counter > 30)//it stops wirelessBoard from hearing answer
-		{
-			_MAX_RT_counter=0;
-			NRF_L_reconnection = true;
-			NRF24L01_L_WriteReg(W_REGISTER | EN_AA, 0x00);
-		}
 
 	}
 }

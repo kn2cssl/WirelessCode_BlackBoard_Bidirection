@@ -365,8 +365,8 @@ char *Address, char Address_Width, char Size_Payload, char Tx_Power)
 
 	// Enable Enhanced ShockBurst
 	NRF24L01_R_Set_ShockBurst(_ShockBurst_OFF);
-	NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x00);
-	NRF24L01_R_WriteReg(W_REGISTER | SETUP_RETR, 0x60);//parametersConnection1:0x2c ~ 1ms
+	NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
+	NRF24L01_R_WriteReg(W_REGISTER | SETUP_RETR, 0xf0);//parametersConnection1:0x2c ~ 1ms
 	//NRF24L01_L_WriteReg(W_REGISTER | FEATURE, 0x02);  //
 	
 	// RF output power in TX mode = 0dBm (Max.)
