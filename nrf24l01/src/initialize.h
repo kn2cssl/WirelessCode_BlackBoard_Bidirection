@@ -135,7 +135,6 @@
 void En_RC32M(void);
 void PORT_init(void);
 
-#define TIMERD0_PER 0x7D
 void TimerD0_init(void);
 
 void TimerE0_init(void);

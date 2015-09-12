@@ -29,13 +29,13 @@ void PORT_init(void)
 				| LED_Green_L_PIN_bm | LED_Green_R_PIN_bm | LED_White_R_PIN_bm | LED_White_L_PIN_bm;
 	PORTC_DIR = NRF24L01_R_CE_LINE | NRF24L01_R_CS_LINE | NRF24L01_R_MOSI_LINE | NRF24L01_R_SCK_LINE | Wireless_TX_R_PIN_bm;
 			PORTC_PIN0CTRL |= PORT_ISC_LEVEL_gc;
-			PORTC_INTCTRL |= PORT_INT0LVL_LO_gc;
+			PORTC_INTCTRL  |= PORT_INT0LVL_LO_gc;
 			PORTC_INT0MASK |= PIN0_bm;
 	PORTD_DIR = Buzzer_PIN_bm;
 	PORTE_DIR = NRF24L01_L_CE_LINE | NRF24L01_L_CS_LINE | NRF24L01_L_MOSI_LINE | NRF24L01_L_SCK_LINE | Wireless_TX_L_PIN_bm;
-	PORTE_PIN0CTRL |= PORT_ISC_LEVEL_gc;
-	PORTE_INTCTRL |= PORT_INT0LVL_LO_gc;
-	PORTE_INT0MASK |= PIN0_bm;
+			PORTE_PIN0CTRL |= PORT_ISC_LEVEL_gc;
+			PORTE_INTCTRL  |= PORT_INT0LVL_LO_gc;
+			PORTE_INT0MASK |= PIN0_bm;
 	PORTF_DIR = Segment_A_bm | Segment_B_bm | Segment_C_bm | Segment_D_bm | Segment_E_bm | Segment_F_bm | Segment_G_bm | Segment_DP_bm; 
 	Wireless_R_PORT.OUTSET=Wireless_TX_R_PIN_bm;
 };

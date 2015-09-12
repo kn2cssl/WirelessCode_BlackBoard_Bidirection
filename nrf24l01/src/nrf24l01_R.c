@@ -360,28 +360,23 @@ char *Address, char Address_Width, char Size_Payload, char Tx_Power) {
 void NRF24L01_R_Init_milad(char Device_Mode, char CH, char DataRate,
 char *Address, char Address_Width, char Size_Payload, char Tx_Power)
  {
-
 	//NRF24L01_L_CE_OUT; // Set Port DIR out
 
 	// Enable Enhanced ShockBurst
 	NRF24L01_R_Set_ShockBurst(_ShockBurst_OFF);
 	NRF24L01_R_WriteReg(W_REGISTER | EN_AA, 0x01);
-	NRF24L01_R_WriteReg(W_REGISTER | SETUP_RETR, 0xf0);//parametersConnection1:0x2c ~ 1ms
+	NRF24L01_R_WriteReg(W_REGISTER | SETUP_RETR, 0x10);
 	//NRF24L01_L_WriteReg(W_REGISTER | FEATURE, 0x02);  //
 	
 	// RF output power in TX mode = 0dBm (Max.)
 	// Set LNA gain
 	NRF24L01_R_WriteReg(W_REGISTER | RF_SETUP, 0b00000001 | Tx_Power | DataRate);////////////
-
-	NRF24L01_R_Set_Address_Width(Address_Width);//////////////////////
-
-	NRF24L01_R_Set_RX_Pipe(0, Address, Address_Width, Size_Payload);
-// 	NRF24L01_R_Set_RX_Pipe(1, Address_R_P1, Address_Width, Size_Payload);
-// 	NRF24L01_R_Set_RX_Pipe(2, Address_R_P2, Address_Width, Size_Payload);
-	
 	NRF24L01_R_Set_CH(CH);
-
+	
+	NRF24L01_R_Set_Address_Width(Address_Width);//////////////////////
+	NRF24L01_R_Set_RX_Pipe(0, Address, Address_Width, Size_Payload);
 	NRF24L01_R_Set_TX_Address(Address, Address_Width); // Set Transmit address
+	
 
 	// Bits 4..6: Reflect interrupts as active low on the IRQ pin
 	// Bit 3: Enable CRC
