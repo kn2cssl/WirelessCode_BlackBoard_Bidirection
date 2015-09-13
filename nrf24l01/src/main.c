@@ -15,15 +15,16 @@ void packing_data (void);
 void stoping_robot (void);
 void Battery_Check (void);
 void Wireless_Recoonection (void);
+void Timer_on (void) ;
+void Timer_show (void) ;
 
 char Buf_Tx[2][Max_Robot][_Buffer_Size] ;
 char Buf_Rx[Max_Robot][_Buffer_Size];
 char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 int  Robot_Select ;
-int  Reconnecting_Robot ;
 int  LED_time;
-int  time;
-int  _MAX_RT_counter=0;
+int  time ;
+uint16_t timer;
 uint16_t pck_timeout[2][Max_Robot];
 int16_t r_id = 0 , l_id = 6 ;
 bool wireless_change_r =false , wireless_change_l = false;
@@ -34,8 +35,10 @@ int main (void)
 	PORT_init();
 	//LCDInit();
 	TimerD0_init();
+	TimerE1_init();
 	PMIC_CTRL |=PMIC_LOLVLEN_bm|PMIC_MEDLVLEN_bm;
 
+	wdt_set_timeout_period(WDT_TIMEOUT_PERIOD_500CLK);
 	wdt_enable();
 
 	USART_R_init();
@@ -93,6 +96,7 @@ int main (void)
 	}
 }
 
+// running time : 8755 clk
 ISR(TCD0_OVF_vect)
 {
 	wdt_reset();
@@ -134,23 +138,31 @@ ISR(TCD0_OVF_vect)
 			NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
 			NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
 		}
-		 		
 		
-	NRF24L01_L_Write_TX_Buf(Buf_Tx[R][l_id], _Buffer_Size);
+	NRF24L01_R_Write_TX_Buf(Buf_Tx[R][r_id], _Buffer_Size);
+	NRF24L01_R_RF_TX(); 		
+		
+	if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+	{
+		NRF24L01_L_Write_TX_Buf(Buf_Tx[L][l_id], _Buffer_Size);
+	}
+	else
+	{
+		NRF24L01_L_Write_TX_Buf(Buf_Tx[R][l_id], _Buffer_Size);
+	}
 	NRF24L01_L_RF_TX();
 	
-	NRF24L01_R_Write_TX_Buf(Buf_Tx[R][r_id], _Buffer_Size);
-	NRF24L01_R_RF_TX();
+	
 	wireless_change_r = false ;
 	wireless_change_l = false ;
-
+	
+	
 	stoping_robot();
-
 	while(Menu_PORT.IN & Menu_Side_Switch_PIN_bm);
 	wdt_reset();
 }
 
-ISR(PRX_R)//ID:3,4,5
+ISR(PRX_R)//ID:0=>5
 {
 	wdt_reset();
 	uint8_t status_R = NRF24L01_R_ReadReg(STATUSe);
@@ -196,7 +208,7 @@ ISR(PRX_R)//ID:3,4,5
 	}
 }
 
-ISR(PRX_L)//ID:0,1,2
+ISR(PRX_L)//ID:6=>11
 {
 	wdt_reset();
 	uint8_t status_L = NRF24L01_L_ReadReg(STATUSe);
@@ -246,12 +258,10 @@ ISR(USART_R_RXC_vect)
 {
 	GetNewData(USARTC0_DATA,R);
 }
-
 ISR(USART_R_DRE_vect) //Wireless_R_USART
 {
 
 }
-
 ISR(USART_L_RXC_vect)
 {
 
@@ -299,6 +309,7 @@ ISR(USART_L_DRE_vect) //Wireless_R_USART
 
 }
 
+// running time : 1411 clk
 void stoping_robot(void)
 {
 	for (uint8_t i=0;i<Max_Robot;i++)
@@ -350,4 +361,23 @@ void stoping_robot(void)
 			}
 		}
 	}
+}
+
+
+//starting counter
+void Timer_on(void)
+{
+	TCE1_CNT = 0 ;
+}
+
+//stopping counter and showing time through USART
+//running time : about 26400 clk
+void Timer_show (void)
+{
+	timer = TCE1_CNT - 17; // 17 clk is for excessive clk counted 
+	char str[200];
+	uint8_t count ;
+	count = sprintf(str,"                               %u\r",timer);
+	for (uint8_t i=0;i<count;i++)
+	usart_putchar(&USARTE0,str[i]);
 }

@@ -65,12 +65,11 @@ void TimerE0_init(void)
 
 void TimerE1_init(void)
 {
-    tc_write_clock_source(&TCE1,TC_CLKSEL_DIV256_gc);
-    tc_set_wgm(&TCE1,TC_WG_SS);
-    tc_write_period(&TCE1,0x00FF);
-    tc_set_direction(&TCE1,TC_UP);
-    tc_enable_cc_channels(&TCE1,TC_CCAEN);
-    tc_enable(&TCE1);
+	tc_write_clock_source(&TCE1,TC_CLKSEL_DIV1_gc);
+	tc_set_wgm(&TCE1,TC_WG_NORMAL);
+	tc_write_period(&TCE1,0xffff);
+	tc_set_direction(&TCE1,TC_UP);
+	tc_enable(&TCE1);
 };
 
 

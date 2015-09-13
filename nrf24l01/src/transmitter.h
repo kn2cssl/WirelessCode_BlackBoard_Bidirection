@@ -81,6 +81,9 @@ struct PCK_Send_Header PCK_S_H;
 struct Robot_Send_Data Robot_S_D, Robot_S_D_tmp, Robot_S_D_tmp2;
 uint8_t Robot_Send_PCK[11],Send_cnt=0;
 
+// receiving data for 9 robots(SIB = 104 ),why? should be 12 robots !!
+// running time : about 560 clk
+// time for receiving all packet : 560 * 104 clk = 58240 clk = 1.82 ms
 static void GetNewData(uint8_t data,int side)
 {	
 	if (PCK_Num[side]<Header_Lenght)
