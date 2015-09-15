@@ -24,10 +24,12 @@ char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 int  Robot_Select ;
 int  LED_time;
 int  time ;
+int r_side ;
+int l_side ;
 uint16_t timer;
 uint16_t pck_timeout[2][Max_Robot];
 int16_t r_id = 0 , l_id = 6 ;
-bool wireless_change_r =false , wireless_change_l = false;
+bool wireless_change_r = true , wireless_change_l = true;
 
 int main (void)
 {
@@ -36,6 +38,7 @@ int main (void)
 	//LCDInit();
 	TimerD0_init();
 	TimerE1_init();
+	TimerE0_init();
 	PMIC_CTRL |=PMIC_LOLVLEN_bm|PMIC_MEDLVLEN_bm;
 
 	wdt_set_timeout_period(WDT_TIMEOUT_PERIOD_500CLK);
@@ -89,10 +92,10 @@ int main (void)
 	{
 		Robot_D_tmp[2][i].RID=12;
 	}
-	
+
 	while (1)
 	{
-
+	
 	}
 }
 
@@ -112,51 +115,104 @@ ISR(TCD0_OVF_vect)
 		LED_time=0;
 	}
 	
-	//////////////////////////////////////////////////////////////////////////sending packet
-
-		if (wireless_change_r)
+// 		if (TCE1_CNT > 20)
+// 		{
+// 			TCE1_CNT = 0;
+// 			l_id ++ ;
+// 			if (l_id == 12)
+// 			{
+// 				l_id = 6 ;
+// 			}
+// 			Address[4] =   ((l_id) << 4) | l_id ;
+// 			NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
+// 			NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
+// 			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+// 			{
+// 				side = L;
+// 			}
+// 			else
+// 			{
+// 				side = R;
+// 			}
+// 			NRF24L01_L_Write_TX_Buf(Buf_Tx[side][l_id], _Buffer_Size);
+// 			NRF24L01_L_RF_TX();
+// 		}
+	
+	if (TCE0_CNT > 20)
+	{
+		TCE0_CNT = 0;
+		/////////////////////////////////////////////
+		r_id ++ ;
+		if (r_id == 12)
 		{
-			r_id ++ ;
-			if (r_id == 6)
+			r_id = 0 ;
+		}
+		
+		if (r_id < 6)
+		{
+			l_id = r_id + 6 ;
+		}
+		else
+		{
+			l_id = r_id - 6 ;
+		}
+		 ///////////////////////////////////////////////
+		if (r_id > 5)
+		{
+			NRF24L01_R_Set_CH(_CH_L);
+			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
 			{
-				r_id = 0 ;
+				r_side = L;
+			} 
+			else
+			{
+				r_side = R ;
 			}
-			Address[4] =   ((r_id) << 4) | r_id ;
-			NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);
-			NRF24L01_R_Set_TX_Address(Address, 5); // Set Transmit address
 			
 		}
-		
-		if (wireless_change_l)
+		else if (r_id == 0)
 		{
-			l_id ++ ;
-			if (l_id == 12)
-			{
-				l_id = 6 ;
-			}
-			Address[4] =   ((l_id) << 4) | l_id ;
-			NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
-			NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
+			NRF24L01_R_Set_CH(_CH_R);
+			r_side = R;
 		}
 		
-	NRF24L01_R_Write_TX_Buf(Buf_Tx[R][r_id], _Buffer_Size);
-	NRF24L01_R_RF_TX(); 		
+		if (l_id > 5)
+		{
+			NRF24L01_L_Set_CH(_CH_L);
+			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+			{
+				l_side = L;
+			}
+			else
+			{
+				l_side = R;
+			}
+			
+		}
+		else if (l_id == 0)
+		{
+			NRF24L01_L_Set_CH(_CH_R);
+			l_side = R;
+		}
 		
-	if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-	{
-		NRF24L01_L_Write_TX_Buf(Buf_Tx[L][l_id], _Buffer_Size);
+		Address[4] =   ((r_id) << 4) | r_id ;
+		NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);
+		NRF24L01_R_Set_TX_Address(Address, 5); // Set Transmit address
+		NRF24L01_R_Write_TX_Buf(Buf_Tx[r_side][r_id], _Buffer_Size);
+		NRF24L01_R_RF_TX();
+		
+		Address[4] =   ((l_id) << 4) | l_id ;
+		NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
+		NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
+		NRF24L01_L_Write_TX_Buf(Buf_Tx[l_side][l_id], _Buffer_Size);
+		NRF24L01_L_RF_TX();
+		
 	}
-	else
-	{
-		NRF24L01_L_Write_TX_Buf(Buf_Tx[R][l_id], _Buffer_Size);
-	}
-	NRF24L01_L_RF_TX();
+
+
+
 	
-	
-	wireless_change_r = false ;
-	wireless_change_l = false ;
-	
-	
+	//////////////////////////////////////////////////////////////////////////sending packet
 	stoping_robot();
 	while(Menu_PORT.IN & Menu_Side_Switch_PIN_bm);
 	wdt_reset();
