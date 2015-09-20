@@ -24,8 +24,9 @@ char Address[_Address_Width] = { 0x11, 0x22, 0x33, 0x44, 0x55};
 int  Robot_Select ;
 int  LED_time;
 int  time ;
-int r_side ;
-int l_side ;
+uint8_t r_side ;
+uint8_t l_side ;
+uint8_t side	;
 uint16_t timer;
 uint16_t pck_timeout[2][Max_Robot];
 int16_t r_id = 0 , l_id = 6 ;
@@ -58,6 +59,12 @@ int main (void)
 	spi_xmega_set_baud_div(&NRF24L01_R_SPI,8000000UL,F_CPU);
 	spi_enable_master_mode(&NRF24L01_R_SPI);
 	spi_enable(&NRF24L01_R_SPI);
+	
+	char str[200];
+	uint8_t count ;
+	count = sprintf(str,"RESET");
+	for (uint8_t i=0;i<count;i++)
+	usart_putchar(&USARTE0,str[i]);
 	
 	sei();
 	
@@ -114,29 +121,7 @@ ISR(TCD0_OVF_vect)
 	
 		LED_time=0;
 	}
-	
-// 		if (TCE1_CNT > 20)
-// 		{
-// 			TCE1_CNT = 0;
-// 			l_id ++ ;
-// 			if (l_id == 12)
-// 			{
-// 				l_id = 6 ;
-// 			}
-// 			Address[4] =   ((l_id) << 4) | l_id ;
-// 			NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
-// 			NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
-// 			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-// 			{
-// 				side = L;
-// 			}
-// 			else
-// 			{
-// 				side = R;
-// 			}
-// 			NRF24L01_L_Write_TX_Buf(Buf_Tx[side][l_id], _Buffer_Size);
-// 			NRF24L01_L_RF_TX();
-// 		}
+
 	
 	if (TCE0_CNT > 20)
 	{
@@ -150,43 +135,32 @@ ISR(TCD0_OVF_vect)
 		
 		l_id = (r_id + 6)%12;
 		 ///////////////////////////////////////////////
-		if (r_id > 5)
+		 if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
+		 {
+			 side = L ;
+		 }
+		 else
+		 {
+			 side = R ;
+		 }
+		 
+		if (r_id == 6)
 		{
 			NRF24L01_R_Set_CH(_CH_L);
-			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-			{
-				r_side = L;
-			} 
-			else
-			{
-				r_side = R ;
-			}
+			r_side = side ;
 			
+			NRF24L01_L_Set_CH(_CH_R);
+			l_side = R;
 		}
 		else if (r_id == 0)
 		{
 			NRF24L01_R_Set_CH(_CH_R);
 			r_side = R;
+			
+			NRF24L01_L_Set_CH(_CH_L);
+			l_side = side ;
 		}
 		
-		if (l_id > 5)
-		{
-			NRF24L01_L_Set_CH(_CH_L);
-			if (Menu_PORT.IN & Menu_Side_Select_PIN_bm)
-			{
-				l_side = L;
-			}
-			else
-			{
-				l_side = R;
-			}
-			
-		}
-		else if (l_id == 0)
-		{
-			NRF24L01_L_Set_CH(_CH_R);
-			l_side = R;
-		}
 		
 		Address[4] =   ((r_id) << 4) | r_id ;
 		NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);
