@@ -242,12 +242,13 @@ void NRF24L01_L_Set_RX_Pipe(char PipeNum, char *Address, int AddressSize, char P
 
 	NRF24L01_L_WriteReg(W_REGISTER | (RX_PW_P0 + PipeNum), PayloadSize);
 	
-	if (PipeNum==0 || PipeNum==1)
-	{
-		NRF24L01_L_WriteRegBuf(W_REGISTER | (RX_ADDR_P0 + PipeNum), Address, AddressSize);
-	}
-	else
-	NRF24L01_L_WriteReg(W_REGISTER| (RX_ADDR_P0 + PipeNum),Address[0]);
+// 	if (PipeNum==0 || PipeNum==1)
+// 	{
+// 		NRF24L01_L_WriteRegBuf(W_REGISTER | (RX_ADDR_P0 + PipeNum), Address, AddressSize);
+// 	}
+// 	else
+// 	NRF24L01_L_WriteReg(W_REGISTER| (RX_ADDR_P0 + PipeNum),Address[0]);
+NRF24L01_L_WriteRegBuf(W_REGISTER | (RX_ADDR_P0 + PipeNum), Address, AddressSize);
 }
 
 /**
