@@ -10,6 +10,7 @@
 #include "Menu.h"
 #include "lcd.h"
 #include "transmitter.h"
+#define  ADDRESS_SIZE 5
 
 void packing_data (void);
 void stoping_robot (void);
@@ -163,13 +164,15 @@ ISR(TCD0_OVF_vect)
 		
 		
 		Address[4] =   ((r_id) << 4) | r_id ;
-		NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);
+/*		NRF24L01_R_Set_RX_Pipe(0, Address, 5, 32);*/
+		NRF24L01_R_WriteRegBuf(W_REGISTER | (RX_ADDR_P0), Address, ADDRESS_SIZE);
 		NRF24L01_R_Set_TX_Address(Address, 5); // Set Transmit address
 		NRF24L01_R_Write_TX_Buf(Buf_Tx[r_side][r_id], _Buffer_Size);
 		NRF24L01_R_RF_TX();
 		
 		Address[4] =   ((l_id) << 4) | l_id ;
-		NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);
+		/*NRF24L01_L_Set_RX_Pipe(0, Address, 5, 32);*/
+		NRF24L01_L_WriteRegBuf(W_REGISTER | (RX_ADDR_P0), Address, ADDRESS_SIZE);
 		NRF24L01_L_Set_TX_Address(Address, 5); // Set Transmit address
 		NRF24L01_L_Write_TX_Buf(Buf_Tx[l_side][l_id], _Buffer_Size);
 		NRF24L01_L_RF_TX();
