@@ -71,8 +71,8 @@ int main (void)
 	////////////////////////////////////////////////////////////////////////
 
 	_delay_us(10);
-	//power on reset delay needs 100ms
-	_delay_ms(100);
+	//power on reset delay needs 10.3ms
+	_delay_ms(11);
 	NRF24L01_L_Clear_Interrupts();
 	NRF24L01_R_Clear_Interrupts();
 	NRF24L01_L_Flush_TX();
@@ -80,18 +80,18 @@ int main (void)
 	NRF24L01_L_Flush_RX();
 	NRF24L01_R_Flush_RX();
 
-	NRF24L01_L_CE_LOW;
+	//NRF24L01_L_CE_LOW;
 	NRF24L01_L_Init_milad(_TX_MODE, _CH_L, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
 	NRF24L01_L_WriteReg(W_REGISTER | DYNPD,0x01);
 	NRF24L01_L_WriteReg(W_REGISTER | FEATURE,0x06);
-	NRF24L01_L_CE_HIGH;
+	//NRF24L01_L_CE_HIGH;
 
 
-	NRF24L01_R_CE_LOW;
+	//NRF24L01_R_CE_LOW;
 	NRF24L01_R_Init_milad(_TX_MODE, _CH_R, _2Mbps, Address, _Address_Width, _Buffer_Size, RF_PWR_MAX);
 	NRF24L01_R_WriteReg(W_REGISTER | DYNPD,0x01);
 	NRF24L01_R_WriteReg(W_REGISTER | FEATURE,0x06);
-	NRF24L01_R_CE_HIGH;
+	//NRF24L01_R_CE_HIGH;
 
 	_delay_us(130);
 
