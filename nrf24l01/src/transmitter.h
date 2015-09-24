@@ -17,15 +17,12 @@
 #define Header_Lenght 4
 #define Data_Lenght 11
 #define Max_Robot 12
-#define Max_SendPacket_Lenght 10 //2*4+1+1
 #define START_BYTE0 0xA5
 #define START_BYTE1 0x5A
 #define STOP_BYTE 0x80
 #define R 0
 #define L 1
 uint8_t PCK_Num[2]={0,0};
-uint8_t data_write_index=0,data_read_index=0,Packet_Next_Start=0;
-uint16_t PCK_Speed,PCK_Reset=0;
 extern char Buf_Tx[2][Max_Robot][_Buffer_Size];
 extern uint16_t pck_timeout[2][Max_Robot];
 struct PCK_Header
@@ -65,21 +62,9 @@ struct PCK_Send_Header
 };
 
 
-struct Robot_Send_Data
-{
-	uint8_t PTP;
-	uint8_t EN1;
-	uint8_t EN2;
-	uint8_t EN3;
-	uint8_t EN4;
-};
-
 struct PCK_Header PCK_H[2];
 struct Robot_Data Robot_D[2][Max_Robot], Robot_D_tmp[2][Max_Robot];
 
-struct PCK_Send_Header PCK_S_H;
-struct Robot_Send_Data Robot_S_D, Robot_S_D_tmp, Robot_S_D_tmp2;
-uint8_t Robot_Send_PCK[11],Send_cnt=0;
 
 // receiving data for 9 robots(SIB = 104 ),why? should be 12 robots !!
 // running time : about 560 clk
@@ -124,56 +109,54 @@ static void GetNewData(uint8_t data,int side)
 			case 0:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].RID=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 1:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M0.Bytes[1]=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 2:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M0.Bytes[0]=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 3:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M1.Bytes[1]=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 4:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M1.Bytes[0]=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 5:
 				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M2.Bytes[1]=data;
 				PCK_H[side].CHK -= data;
-				break;
+			break;
 			case 6:
-			Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M2.Bytes[0]=data;
-			PCK_H[side].CHK -= data;
+				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M2.Bytes[0]=data;
+				PCK_H[side].CHK -= data;
 			break;
 			case 7:
-			Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M3.Bytes[1]=data;
-			PCK_H[side].CHK -= data;
+				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M3.Bytes[1]=data;
+				PCK_H[side].CHK -= data;
 			break;
 			case 8:
-			Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M3.Bytes[0]=data;
-			PCK_H[side].CHK -= data;
+				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].M3.Bytes[0]=data;
+				PCK_H[side].CHK -= data;
 			break;
 			case 9:
-			Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].KCK=data;
-			PCK_H[side].CHK -= data;
+				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].KCK=data;
+				PCK_H[side].CHK -= data;
 			break;
 			case 10:
-			Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].CHP=data;
-			PCK_H[side].CHK -= data;
+				Robot_D_tmp[side][(PCK_Num[side]-Header_Lenght)/Data_Lenght].CHP=data;
+				PCK_H[side].CHK -= data;
 			break;		
 			}
 			PCK_Num[side]++;
 		}		
 		else
 		{ 
-			if (PCK_H[side].CHK == 0 && data == 0x80)
+			if (PCK_H[side].CHK == 0 && data == STOP_BYTE)
 			{	
-				PCK_Reset = 0;
-				PCK_Speed++;
 			
 				for (uint8_t i=0;i<Max_Robot;i++)
 				{
